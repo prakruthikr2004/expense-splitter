@@ -45,6 +45,8 @@ app.get("/", (req, res) => res.send("SplitMate API running..."));
 app.use("/auth", authRoutes);
 app.use("/groups", groupRoutes);
 app.use("/users", userRoutes);
+app.use("/uploads", express.static("uploads"));
+
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/group-expenses", groupExpenseRoutes);
 

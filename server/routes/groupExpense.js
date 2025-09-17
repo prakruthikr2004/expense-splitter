@@ -3,90 +3,94 @@ import express from "express";
 import GroupExpense from "../models/GroupExpense.js";
 import Group from "../models/Group.js";
 import { verifyToken } from "../middleware/auth.js";
+import Settlement from "../models/Settlement.js";
 
 const router = express.Router();
 
-// Helper: calculate pairwise balances for a group
-const calculateBalances = (group, expenses, currentUserEmail) => {
-  // Initialize pairwise debt matrix
+// Helper: calculate balances for current user, applying settlements
+const calculateBalances = (group, expenses, settlements, currentUserEmail) => {
   const balances = {};
-  group.members.forEach(m1 => {
-    balances[m1] = {};
-    group.members.forEach(m2 => {
-      if (m1 !== m2) balances[m1][m2] = 0;
-    });
+
+  // Initialize balances for all members, including current user
+  group.members.forEach(member => {
+    balances[member] = 0;
   });
 
-  // Fill matrix: who owes whom
+  // Calculate from expenses
   expenses.forEach(exp => {
     const payer = exp.paidBy;
     const split = exp.splitDetails;
 
     Object.entries(split).forEach(([member, amt]) => {
-      if (member !== payer) {
-        balances[member][payer] += amt; // member owes payer
+      if (member === payer) return;
+
+      if (payer === currentUserEmail) {
+        balances[member] += amt; // member owes you
+      } else if (member === currentUserEmail) {
+        balances[payer] -= amt; // you owe payer
       }
     });
   });
 
-  // Prepare logged-in user view
-  const userBalances = {};
-  group.members.forEach(m => {
-    if (m !== currentUserEmail) {
-      const owes = balances[currentUserEmail][m]; // how much user owes m
-      const owed = balances[m][currentUserEmail]; // how much m owes user
-
-      const net = owed - owes; // positive: m owes user, negative: user owes m
-
-      if (net > 0) userBalances[m] = net;      // they owe you
-      else if (net < 0) userBalances[m] = net; // you owe them
-      // zero net => ignore
+  // Apply settlements
+  settlements.forEach(s => {
+    if (s.payee === currentUserEmail) {
+      balances[s.payer] = (balances[s.payer] || 0) - s.amount;
+    } else if (s.payer === currentUserEmail) {
+      balances[s.payee] = (balances[s.payee] || 0) + s.amount;
     }
   });
 
-  return userBalances;
+  return balances;
 };
 
 
-// GET all expenses + balances for a group
+router.get("/group/:groupId/settlements", verifyToken, async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const settlements = await Settlement.find({ groupId }).sort({ createdAt: -1 });
+    res.json({ settlements });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// GET all expenses + balances + settlements for a group
 router.get("/group/:groupId", verifyToken, async (req, res) => {
   try {
     const group = await Group.findById(req.params.groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
-
-    // Only allow group members
-    if (!group.members.includes(req.user.email)) {
+    if (!group.members.includes(req.user.email))
       return res.status(403).json({ message: "Access denied" });
-    }
 
     const expenses = await GroupExpense.find({ groupId: group._id }).lean();
-    const balances = calculateBalances(group, expenses, req.user.email);
+    const settlements = await Settlement.find({ groupId: group._id }).lean();
 
-    res.json({ expenses, balances });
+    const balances = calculateBalances(group, expenses, settlements, req.user.email);
+
+    res.json({ expenses, balances, settlements });
   } catch (err) {
     console.error("GET /group-expenses error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// POST: add a new expense
+// POST: add expense (same as before)
 router.post("/group/:groupId", verifyToken, async (req, res) => {
+  
   const { description, amount, splitType, splitDetails } = req.body;
-
-  if (!description || !amount) {
+  if (!description || !amount)
     return res.status(400).json({ message: "Required fields missing" });
-  }
 
   try {
     const group = await Group.findById(req.params.groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
-
-    // Only group members can add expenses
-    if (!group.members.includes(req.user.email)) {
+    if (!group.members.includes(req.user.email))
       return res.status(403).json({ message: "Access denied" });
-    }
 
-    const expenseMembers = group.members; // emails
+    const expenseMembers = group.members;
     let finalSplit = {};
 
     if (splitType === "equal") {
@@ -94,109 +98,125 @@ router.post("/group/:groupId", verifyToken, async (req, res) => {
       expenseMembers.forEach(email => (finalSplit[email] = share));
     } else if (splitType === "percentage") {
       Object.entries(splitDetails).forEach(([email, pct]) => {
-        if (expenseMembers.includes(email)) {
+        if (expenseMembers.includes(email))
           finalSplit[email] = (pct / 100) * Number(amount);
-        }
       });
-      if (!finalSplit[req.user.email]) finalSplit[req.user.email] = 0; // ensure payer included
+      if (!finalSplit[req.user.email]) finalSplit[req.user.email] = 0;
     }
 
     const expense = new GroupExpense({
-      description,
-      amount: Number(amount),
-      paidBy: req.user.email,
-      groupId: group._id,
-      splitType,
-      splitDetails: finalSplit,
-    });
+  description,
+  amount: Number(amount),
+  paidBy: req.user.email,
+  groupId: group._id,
+  splitType,
+  splitDetails: finalSplit,
+  splits: Object.entries(finalSplit).map(([email, amt]) => ({
+    user: email,
+    amount: amt,
+    settled: email === req.user.email
+  }))
+});
 
     await expense.save();
 
     const expenses = await GroupExpense.find({ groupId: group._id }).lean();
-    const balances = calculateBalances(group, expenses, req.user.email);
+    const settlements = await Settlement.find({ groupId: group._id }).lean();
 
-    res.status(201).json({ expense, balances });
+    const balances = calculateBalances(group, expenses, settlements, req.user.email);
+
+    res.status(201).json({ expense, balances, settlements });
+    console.log("🔍 Expenses:", expenses);
+console.log("🔍 Settlements:", settlements);
+console.log("🔍 Balances:", balances);
+
+
   } catch (err) {
     console.error("POST /group-expenses error:", err);
     res.status(500).json({ message: "Server error" });
   }
+
 });
 
 // DELETE an expense
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
     const expense = await GroupExpense.findById(req.params.id);
-    if (!expense) {
-      return res.status(404).json({ message: "Expense not found" });
-    }
+    if (!expense) return res.status(404).json({ message: "Expense not found" });
 
     const group = await Group.findById(expense.groupId);
-    if (!group) {
-      return res.status(404).json({ message: "Group not found" });
-    }
-
-    // ✅ Only group members can attempt delete
-    if (!group.members.includes(req.user.email)) {
-      return res.status(403).json({ message: "Access denied: not a group member" });
-    }
-
-    // ✅ Only the payer can actually delete the expense
-    if (expense.paidBy !== req.user.email) {
+    if (!group) return res.status(404).json({ message: "Group not found" });
+    if (!group.members.includes(req.user.email))
+      return res.status(403).json({ message: "Access denied" });
+    if (expense.paidBy !== req.user.email)
       return res.status(403).json({ message: "Only the payer can delete this expense" });
-    }
 
     await expense.deleteOne();
 
     const expenses = await GroupExpense.find({ groupId: group._id }).lean();
-    const balances = calculateBalances(group, expenses, req.user.email);
+    const settlements = await Settlement.find({ groupId: group._id }).lean();
+    const balances = calculateBalances(group, expenses, settlements, req.user.email);
 
-    res.json({ success: true, balances, message: "Expense deleted successfully" });
+    res.json({ success: true, balances, settlements });
   } catch (err) {
     console.error("DELETE /group-expenses error:", err);
-    res.status(500).json({
-      message: "Error deleting expense",
-      error: err.message,
-    });
+    res.status(500).json({ message: "Error deleting expense", error: err.message });
   }
 });
 
-// POST: Settle up between two users
+// POST: settle balance with another user
 router.post("/group/:groupId/settle", verifyToken, async (req, res) => {
-  const { withUser } = req.body; // the person you're settling with
-  const group = await Group.findById(req.params.groupId);
+  const { withUser } = req.body;
+  const currentUser = req.user.email;
 
-  if (!group) return res.status(404).json({ message: "Group not found" });
-  if (!group.members.includes(req.user.email)) {
-    return res.status(403).json({ message: "Access denied" });
-  }
+  if (!withUser) return res.status(400).json({ message: "withUser is required" });
 
   try {
-    // 🔹 Find all expenses where balances exist
-    const expenses = await GroupExpense.find({ groupId: group._id });
+    const group = await Group.findById(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+    if (!group.members.includes(currentUser) || !group.members.includes(withUser))
+      return res.status(403).json({ message: "Access denied" });
 
-    // Logic: mark debts between req.user.email and withUser as settled
-    // Simplest way: add a "settled" transaction (like paying back)
-    const settleExpense = new GroupExpense({
-      description: `Settlement between ${req.user.email} and ${withUser}`,
-      amount: 0,
-      paidBy: req.user.email,
+    const expenses = await GroupExpense.find({ groupId: group._id }).lean();
+    const settlements = await Settlement.find({ groupId: group._id }).lean();
+
+    const balances = calculateBalances(group, expenses, settlements, currentUser);
+    let amount = balances[withUser] || 0;
+
+    if (amount === 0) return res.status(400).json({ message: "No balance to settle" });
+
+    let payer, payee;
+    if (amount > 0) {
+      // withUser owes currentUser
+      payer = withUser;
+      payee = currentUser;
+    } else {
+      // currentUser owes withUser
+      payer = currentUser;
+      payee = withUser;
+      amount = Math.abs(amount);
+    }
+
+    await Settlement.create({
       groupId: group._id,
-      splitType: "settlement",
-      splitDetails: {
-        [req.user.email]: 0,
-        [withUser]: 0,
-      },
-      settled: { from: req.user.email, to: withUser },
+      payer,
+      payee,
+      amount,
+      settled: true,
+      settledAt: new Date()
     });
 
-    await settleExpense.save();
+    const updatedSettlements = await Settlement.find({ groupId: group._id }).lean();
+    const updatedBalances = calculateBalances(group, expenses, updatedSettlements, currentUser);
 
-    res.json({ success: true, message: "Settled up successfully!" });
+    res.json({ message: "Settlement successful", balances: updatedBalances, settlements: updatedSettlements });
   } catch (err) {
-    res.status(500).json({ message: "Error settling up", error: err.message });
+    console.error("POST /settle error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
 
 
+export { calculateBalances };
 export default router;

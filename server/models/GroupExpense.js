@@ -8,6 +8,14 @@ const groupExpenseSchema = new mongoose.Schema({
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group", required: true },
   splitType: { type: String, enum: ["equal", "percentage"], default: "equal" },
   splitDetails: { type: Object, default: {} }, // userId -> amount or percentage
+  splits: [
+  {
+    user: { type: String, required: true },
+    amount: { type: Number, required: true },
+    settled: { type: Boolean, default: false }
+  }
+]
+
 }, { timestamps: true });
 
 export default mongoose.model("GroupExpense", groupExpenseSchema);

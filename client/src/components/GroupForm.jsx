@@ -53,10 +53,10 @@ export default function GroupForm({ onGroupCreated }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-gray-100">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-gray-800">
       {/* Group Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-200">
           Group Name
         </label>
         <input
@@ -64,7 +64,7 @@ export default function GroupForm({ onGroupCreated }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-gray-100 focus:outline-none"
           placeholder="e.g. Goa Trip"
         />
       </div>
@@ -72,7 +72,7 @@ export default function GroupForm({ onGroupCreated }) {
       
       {/* Members */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-200">
           Members
         </label>
         {members.map((member, index) => (
@@ -82,7 +82,7 @@ export default function GroupForm({ onGroupCreated }) {
               value={member}
               onChange={(e) => handleMemberChange(index, e.target.value)}
               required
-              className="flex-1 px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="flex-1 px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-gray-100 focus:outline-none"
               placeholder="member@example.com"
             />
             {members.length > 1 && (
@@ -100,7 +100,7 @@ export default function GroupForm({ onGroupCreated }) {
         <button
           type="button"
           onClick={addMemberField}
-          className="mt-2 text-gray-600 hover:underline"
+          className="mt-2 text-gray-300 hover:underline"
         >
           + Add another member
         </button>
@@ -109,7 +109,7 @@ export default function GroupForm({ onGroupCreated }) {
       {/* Submit */}
       <button
         type="submit"
-        className="w-full py-2 px-4 bg-black text-white rounded-lg shadow hover:bg-gray-700 transition"
+        className="w-full py-2 px-4 bg-black text-white rounded-lg shadow hover:bg-gray-500 transition"
       >
         Create Group
       </button>

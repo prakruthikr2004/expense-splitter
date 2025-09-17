@@ -107,4 +107,47 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// ✨ Get current logged in user
+router.get("/me", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching user" });
+  }
+});
+
+
+// ✨ Update Avatar
+router.put("/avatar", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { avatar } = req.body; // expecting a URL or base64 string
+
+    if (!avatar) {
+      return res.status(400).json({ message: "Avatar is required" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { avatar },
+      { new: true }
+    ).select("name email avatar");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      message: "Avatar updated successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error("Error updating avatar:", err.message);
+    res.status(500).json({ message: "Error updating avatar" });
+  }
+});
+
+
 export default router;

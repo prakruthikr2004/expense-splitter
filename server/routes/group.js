@@ -213,6 +213,19 @@ router.get("/:id/summary", verifyToken, async (req, res) => {
   }
 });
 
+// routes/groups.js
+router.get("/user/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+    const groups = await Group.find({ members: email }); // Groups where user is a member
+    res.json(groups);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 
 
 

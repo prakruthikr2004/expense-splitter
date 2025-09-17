@@ -1,0 +1,11 @@
+:root {
+  --color-primary: #f0f4f8;        /* soft background for header/sidebar */
+  --color-secondary: #ffffff;       /* light elements */
+  --color-accent: #60a5fa;          /* soft blue highlight */
+  --color-background: #f9fafb;      /* page background */
+  --color-text: #1e293b;            /* dark gray text, not black */
+  --color-button-bg: #e2e8f0;       /* soft button background */
+  --color-button-text: #1e293b;     /* text on buttons */
+  --color-border: #cbd5e1;          /* soft border color */
+  --color-hover: #93c5fd;           /* hover highlight */
+}

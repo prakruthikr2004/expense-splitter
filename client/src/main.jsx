@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import './theme.css';
 import "./index.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home.jsx";
@@ -12,9 +13,12 @@ import Expenses from "./pages/Expenses.jsx";
 import Groups from "./pages/Groups.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { ExpensesProvider } from "./context/ExpensesContext.jsx";
+import { UserProvider } from "./context/UserContext.jsx";
 import GroupExpenses from "./pages/GroupExpensePage.jsx";
+import { ThemeProvider } from "./context/ThemeContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
+  <UserProvider>
   <BrowserRouter>
     <Routes>
       {/* Landing / Home */}
@@ -49,4 +53,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       </Route>
     </Routes>
   </BrowserRouter>
+  </UserProvider>
 );
