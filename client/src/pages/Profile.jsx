@@ -1,8 +1,11 @@
-import { useState,useContext, useEffect } from "react";
+import { useState,useContext,useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { UserContext } from "../context/UserContext"; // adjust path
+import { UserContext } from "../context/UserContext"; 
+import { io } from "socket.io-client";
+import { useSocket } from "../context/SocketContext";
+
 
 import { LogOut, SquarePen, Check, X, Camera } from "lucide-react";
 
@@ -14,9 +17,39 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState("");
   const { user, setUser } = useContext(UserContext);
+  const socket = useSocket();
+   const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
+
+useEffect(() => { 
+    if (!socket) return;
+
+    const handleUserUpdated = (updatedUser) => {
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      toast.info("Your profile was updated elsewhere!");
+    };
+
+    const handleDeleteUser = (deletedUserId) => {
+      if (userRef.current?._id === deletedUserId) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        toast.error("Your account was deleted!");
+        navigate("/signup");
+      }
+    };
+
+    socket.on("userUpdated", handleUserUpdated);
+    socket.on("deleteUser", handleDeleteUser);
+
+    return () => {
+      socket.off("userUpdated", handleUserUpdated);
+      socket.off("deleteUser", handleDeleteUser);
+    };
+  }, [socket, navigate]);
 
 
-  // Fetch user from backend
+ // Fetch user
   const fetchUser = async () => {
     if (!token) return;
     try {
@@ -32,48 +65,33 @@ export default function Profile() {
     }
   };
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
+  useEffect(() => { fetchUser(); }, []);
 
   // Update name
-const handleUpdate = async () => {
-  if (!newName.trim()) {
-    toast.error("Name cannot be empty!");
-    return;
-  }
-  try {
-    const res = await fetch("http://localhost:5000/users/update-name", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name: newName }),
-    });
+// Update name
+  const handleUpdate = async () => {
+    if (!newName.trim()) return toast.error("Name cannot be empty!");
+    try {
+      const res = await fetch("http://localhost:5000/users/update-name", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: newName }),
+      });
+      const data = await res.json();
+      if (!res.ok) return toast.error(data.message || "Failed to update name");
 
-    const data = await res.json();
+      setUser(data.user);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-    if (!res.ok) {
-      toast.error(data.message || "Failed to update name");
-      return;
+      socket?.emit("updateUser", data.user);
+
+      toast.success("Name updated successfully!");
+      setIsEditing(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update name");
     }
-
-    // Save the updated token and user
-    if (data.token) {
-      localStorage.setItem("token", data.token);
-    }
-    setUser(data.user);
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    toast.success("Name updated successfully!");
-    setIsEditing(false);
-  } catch (err) {
-    console.error("Frontend update error:", err);
-    toast.error("Failed to update name");
-  }
-};
-
+  };
 
 
   const handleDeleteAccount = () => {
@@ -97,6 +115,7 @@ const handleUpdate = async () => {
                   method: "DELETE",
                   headers: { Authorization: `Bearer ${token}` },
                 });
+
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -104,6 +123,10 @@ const handleUpdate = async () => {
                   return;
                 }
 
+                // Notify other clients
+                socket?.emit("deleteUser", data.userId || user._id);
+
+                // Clear local storage and navigate
                 localStorage.removeItem("token");
                 localStorage.removeItem("user");
                 toast.success(data.message || "Account deleted successfully!");
@@ -124,46 +147,40 @@ const handleUpdate = async () => {
 };
 
 
-  const handleLogout = () => {
+    const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
 
-
-
   if (!user) return <div>Loading...</div>;
 
 const handleAvatarChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const formData = new FormData();
-  formData.append("avatar", file);
+    const formData = new FormData();
+    formData.append("avatar", file);
 
-  try {
-    const res = await fetch("http://localhost:5000/users/avatar", {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`, // ✅ do NOT set Content-Type manually
-      },
-      body: formData,
-    });
-
-    const data = await res.json(); // this will work once backend returns proper JSON
-
-    if (res.ok && data.success) {
-      setUser((prev) => ({ ...prev, avatar: newAvatarUrl }));
-      localStorage.setItem("user", JSON.stringify({ ...user, avatar: data.avatar }));
-      toast.success("Avatar updated successfully!");
-
-    } else {
-      toast.error(data.message || "Failed to update avatar");
+    try {
+      const res = await fetch("http://localhost:5000/users/avatar", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const updatedUser = { ...user, avatar: data.avatar };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        socket?.emit("updateUser", updatedUser);
+        toast.success("Avatar updated successfully!");
+      } else toast.error(data.message || "Failed to update avatar");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update avatar");
     }
-  } catch (err) {
-    console.error("Upload error:", err);
-    toast.error("Failed to update avatar");
-  }
-};
+  };
+
 
 
 

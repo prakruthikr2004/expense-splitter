@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState,useContext, useEffect, useRef } from "react";
+import { useSocket } from "../context/SocketContext";
+import { UserContext } from "../context/UserContext";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Menu, X, Wallet, Users2Icon, Home as HomeIcon, LogOut, User, Bell } from "lucide-react";
 
@@ -11,6 +13,22 @@ export default function DashboardLayout() {
   const [notifications, setNotifications] = useState([]);
   const [showDebtDropdown, setShowDebtDropdown] = useState(false);
   const debtDropdownRef = useRef(null);
+  const { user, setUser } = useContext(UserContext);
+const socket = useSocket();
+
+useEffect(() => {
+  if (!socket) return;
+
+  // Listen for user updates
+  socket.on("userUpdated", (updatedUser) => {
+    setUser(updatedUser); // updates user context
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  });
+
+  return () => {
+    socket.off("userUpdated");
+  };
+}, [socket, setUser]);
 
 useEffect(() => {
   const handleClickOutside = (event) => {
@@ -35,7 +53,7 @@ useEffect(() => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  
 
   const getNotificationId = (note) => {
     return note.replace(/\s+/g, "").toLowerCase(); // simple stable ID
@@ -67,6 +85,7 @@ useEffect(() => {
 
   // Fetch debts and filter deleted notifications
   const fetchDebts = async () => {
+    if (!user?.email) return; 
     try {
       const res = await fetch(`http://localhost:5000/groups/user/${user.email}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -105,9 +124,10 @@ useEffect(() => {
 
   // Run fetchDebts on mount and whenever deletedNotifications change
   useEffect(() => {
+    if (!user?.email) return; 
     fetchDebts();
    
-  }, [user.email, deletedNotifications]);
+  }, [user?.email, deletedNotifications]);
 
   return (
     <>
@@ -216,7 +236,7 @@ useEffect(() => {
             {/* Avatar */}
             <div className="relative" ref={dropdownRef}>
               <img
-                src={user.avatar || "https://i.pravatar.cc/150"}
+                src={user?.avatar || "https://i.pravatar.cc/150"}
                 alt="Profile"
                 className="w-8 h-8 rounded-full object-cover cursor-pointer border"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}

@@ -4,6 +4,8 @@ import GroupExpense from "../models/GroupExpense.js";
 import Group from "../models/Group.js";
 import { verifyToken } from "../middleware/auth.js";
 import Settlement from "../models/Settlement.js";
+import { io } from "../index.js";
+
 
 const router = express.Router();
 
@@ -11,7 +13,7 @@ const router = express.Router();
 const calculateBalances = (group, expenses, settlements, currentUserEmail) => {
   const balances = {};
 
-  // Initialize balances for all members, including current user
+  // Initialize balances for all members
   group.members.forEach(member => {
     balances[member] = 0;
   });
@@ -44,7 +46,7 @@ const calculateBalances = (group, expenses, settlements, currentUserEmail) => {
   return balances;
 };
 
-
+// GET settlements for a group
 router.get("/group/:groupId/settlements", verifyToken, async (req, res) => {
   const { groupId } = req.params;
   try {
@@ -56,7 +58,6 @@ router.get("/group/:groupId/settlements", verifyToken, async (req, res) => {
   }
 });
 
-
 // GET all expenses + balances + settlements for a group
 router.get("/group/:groupId", verifyToken, async (req, res) => {
   try {
@@ -67,7 +68,6 @@ router.get("/group/:groupId", verifyToken, async (req, res) => {
 
     const expenses = await GroupExpense.find({ groupId: group._id }).lean();
     const settlements = await Settlement.find({ groupId: group._id }).lean();
-
     const balances = calculateBalances(group, expenses, settlements, req.user.email);
 
     res.json({ expenses, balances, settlements });
@@ -77,68 +77,75 @@ router.get("/group/:groupId", verifyToken, async (req, res) => {
   }
 });
 
-// POST: add expense (same as before)
+// POST: add expense
 router.post("/group/:groupId", verifyToken, async (req, res) => {
-  
+  const groupId = req.params.groupId;
   const { description, amount, splitType, splitDetails } = req.body;
+
   if (!description || !amount)
     return res.status(400).json({ message: "Required fields missing" });
 
   try {
-    const group = await Group.findById(req.params.groupId);
+    const group = await Group.findById(groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
     if (!group.members.includes(req.user.email))
       return res.status(403).json({ message: "Access denied" });
 
-    const expenseMembers = group.members;
     let finalSplit = {};
-
     if (splitType === "equal") {
-      const share = Number(amount) / expenseMembers.length;
-      expenseMembers.forEach(email => (finalSplit[email] = share));
+      const share = Number(amount) / group.members.length;
+      group.members.forEach(email => (finalSplit[email] = share));
     } else if (splitType === "percentage") {
       Object.entries(splitDetails).forEach(([email, pct]) => {
-        if (expenseMembers.includes(email))
+        if (group.members.includes(email))
           finalSplit[email] = (pct / 100) * Number(amount);
       });
       if (!finalSplit[req.user.email]) finalSplit[req.user.email] = 0;
     }
 
     const expense = new GroupExpense({
-  description,
-  amount: Number(amount),
-  paidBy: req.user.email,
-  groupId: group._id,
-  splitType,
-  splitDetails: finalSplit,
-  splits: Object.entries(finalSplit).map(([email, amt]) => ({
-    user: email,
-    amount: amt,
-    settled: email === req.user.email
-  }))
-});
+      description,
+      amount: Number(amount),
+      paidBy: req.user.email,
+      groupId: group._id,
+      splitType,
+      splitDetails: finalSplit,
+      splits: Object.entries(finalSplit).map(([email, amt]) => ({
+        user: email,
+        amount: amt,
+        settled: email === req.user.email
+      }))
+    });
 
     await expense.save();
 
+    // Fetch updated data after saving
     const expenses = await GroupExpense.find({ groupId: group._id }).lean();
     const settlements = await Settlement.find({ groupId: group._id }).lean();
-
     const balances = calculateBalances(group, expenses, settlements, req.user.email);
+    console.log()
 
+    // Emit updated data to all group members
+    group.members.forEach(email => {
+  const userBalances = calculateBalances(group, expenses, settlements, email);
+  io.to(email).emit("groupUpdated", {
+    expenses,
+    balances: userBalances,
+    settlements
+  });
+});
+
+
+    // Return updated data to requester
     res.status(201).json({ expense, balances, settlements });
-    console.log("🔍 Expenses:", expenses);
-console.log("🔍 Settlements:", settlements);
-console.log("🔍 Balances:", balances);
-
 
   } catch (err) {
     console.error("POST /group-expenses error:", err);
     res.status(500).json({ message: "Server error" });
   }
-
 });
 
-// DELETE an expense
+// DELETE expense
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
     const expense = await GroupExpense.findById(req.params.id);
@@ -156,6 +163,8 @@ router.delete("/:id", verifyToken, async (req, res) => {
     const expenses = await GroupExpense.find({ groupId: group._id }).lean();
     const settlements = await Settlement.find({ groupId: group._id }).lean();
     const balances = calculateBalances(group, expenses, settlements, req.user.email);
+
+    io.to(group._id.toString()).emit("groupUpdated", { expenses, balances, settlements });
 
     res.json({ success: true, balances, settlements });
   } catch (err) {
@@ -179,19 +188,16 @@ router.post("/group/:groupId/settle", verifyToken, async (req, res) => {
 
     const expenses = await GroupExpense.find({ groupId: group._id }).lean();
     const settlements = await Settlement.find({ groupId: group._id }).lean();
-
     const balances = calculateBalances(group, expenses, settlements, currentUser);
-    let amount = balances[withUser] || 0;
 
+    let amount = balances[withUser] || 0;
     if (amount === 0) return res.status(400).json({ message: "No balance to settle" });
 
     let payer, payee;
     if (amount > 0) {
-      // withUser owes currentUser
       payer = withUser;
       payee = currentUser;
     } else {
-      // currentUser owes withUser
       payer = currentUser;
       payee = withUser;
       amount = Math.abs(amount);
@@ -209,14 +215,18 @@ router.post("/group/:groupId/settle", verifyToken, async (req, res) => {
     const updatedSettlements = await Settlement.find({ groupId: group._id }).lean();
     const updatedBalances = calculateBalances(group, expenses, updatedSettlements, currentUser);
 
+    io.to(group._id.toString()).emit("groupUpdated", {
+      expenses,
+      balances: updatedBalances,
+      settlements: updatedSettlements
+    });
+
     res.json({ message: "Settlement successful", balances: updatedBalances, settlements: updatedSettlements });
   } catch (err) {
     console.error("POST /settle error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-
-
 
 export { calculateBalances };
 export default router;

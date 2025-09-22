@@ -16,17 +16,27 @@ import { ExpensesProvider } from "./context/ExpensesContext.jsx";
 import { UserProvider } from "./context/UserContext.jsx";
 import GroupExpenses from "./pages/GroupExpensePage.jsx";
 import { ThemeProvider } from "./context/ThemeContext";
+import OAuthSuccess from "./pages/OAuthSuccess";
+import VerifyEmail from "./pages/VerifyEmail.jsx";
+import { SocketProvider } from "./context/SocketContext.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
+  
   <UserProvider>
+    <SocketProvider>
   <BrowserRouter>
     <Routes>
       {/* Landing / Home */}
       <Route path="/" element={<App />} />
 
       {/* Public routes */}
+      
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/oauth-success" element={<OAuthSuccess />} />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
+
+
 
       {/* Protected Dashboard with nested routes */}
       <Route
@@ -53,5 +63,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       </Route>
     </Routes>
   </BrowserRouter>
+  </SocketProvider>
   </UserProvider>
+  
 );

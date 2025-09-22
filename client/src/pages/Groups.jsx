@@ -7,14 +7,40 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Plus, Users ,Trash2 } from "lucide-react";
 import { UserContext } from "../context/UserContext";
+import { useSocket, SocketProvider } from "../context/SocketContext";
 
 export default function Groups() {
   const [groups, setGroups] = useState([]);
+   
+  const socket = useSocket();
   const [showForm, setShowForm] = useState(false);
   const token = localStorage.getItem("token");
   const { user } = useContext(UserContext);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Listen for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    // When a new group is created
+    socket.on("groupCreated", (newGroup) => {
+      setGroups((prev) => [...prev, newGroup]);
+      toast.success(`New group created: ${newGroup.name}`);
+    });
+
+    // When a group is deleted
+    socket.on("groupDeleted", (deletedGroupId) => {
+      setGroups((prev) => prev.filter((g) => g._id !== deletedGroupId));
+      toast.info("A group was deleted");
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.off("groupCreated");
+      socket.off("groupDeleted");
+    };
+  }, [socket]);
 
   const fetchGroups = async () => {
     try {
@@ -58,10 +84,14 @@ export default function Groups() {
   }, []);
 
   const handleGroupCreated = (newGroup) => {
-    setGroups((prev) => [...prev, newGroup]);
-    setShowForm(false);
-    toast.success("Group created successfully!");
-  };
+  setGroups((prev) => {
+    // Prevent duplicates
+    if (prev.find((g) => g._id === newGroup._id)) return prev;
+    return [...prev, newGroup];
+  });
+  setShowForm(false);
+  toast.success("Group created successfully!");
+};
 
   const confirmGroupDeleteToast = (onConfirm) => {
     toast(

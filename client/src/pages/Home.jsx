@@ -1,19 +1,118 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext,useRef, useEffect, useState } from "react";
 import { ExpensesContext } from "../context/ExpensesContext";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
+import { useSocket } from "../context/SocketContext";
+import { toast } from "react-toastify";
 
 
 
 export default function Home() {
-  const { expenses } = useContext(ExpensesContext);
+ const { expenses, setExpenses } = useContext(ExpensesContext);
+
+  
   const [groups, setGroups] = useState([]);
+  console.log("groups.........",groups)
   const [balances, setBalances] = useState({});
   const token = localStorage.getItem("token");
 
-const { user } = useContext(UserContext);
 
-  const navigate = useNavigate();
+const navigate = useNavigate();
+const { user, setUser } = useContext(UserContext);
+  const socket = useSocket();
+   const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
+
+useEffect(() => { 
+  if (!socket) return;
+
+  const handleUserUpdated = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    toast.info("Your profile was updated elsewhere!");
+  };
+
+  const handleDeleteUser = (deletedUserId) => {
+    if (userRef.current?._id === deletedUserId) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      toast.error("Your account was deleted!");
+      navigate("/signup");
+    }
+  };
+
+  // 🔹 Real-time expense updates
+  const handleExpenseAdded = (newExpense) => {
+    setExpenses((prev) => [newExpense, ...prev]); // prepend
+    toast.success("New expense added!");
+  };
+
+  const handleExpenseDeleted = (deletedExpenseId) => {
+    setExpenses((prev) => prev.filter((e) => e._id !== deletedExpenseId));
+    toast.warn("An expense was deleted!");
+  };
+
+  socket.on("userUpdated", handleUserUpdated);
+  socket.on("deleteUser", handleDeleteUser);
+  socket.on("expenseAdded", handleExpenseAdded);
+  socket.on("expenseDeleted", handleExpenseDeleted);
+
+  return () => {
+    socket.off("userUpdated", handleUserUpdated);
+    socket.off("deleteUser", handleDeleteUser);
+    socket.off("expenseAdded", handleExpenseAdded);
+    socket.off("expenseDeleted", handleExpenseDeleted);
+  };
+}, [socket, navigate, setUser]);
+
+useEffect(() => {
+  if (!socket) return;
+
+  const handleGroupCreated = async (newGroup) => {
+    setGroups(prev => [newGroup, ...prev]); // prepend group
+
+    // fetch balances for this new group
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/group-expenses/group/${newGroup._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      setBalances(prev => ({ ...prev, [newGroup._id]: data.balances || {} }));
+    } catch (err) {
+      console.error("Error fetching balances for new group:", err);
+    }
+
+    toast.success(`New group "${newGroup.name}" created!`);
+  };
+
+  socket.on("groupCreated", handleGroupCreated);
+
+  return () => {
+    socket.off("groupCreated", handleGroupCreated);
+  };
+}, [socket]);
+
+
+useEffect(() => {
+  if (!socket) return;
+
+  const handleGroupDeleted = (deletedGroupId) => {
+    setGroups(prev => prev.filter(group => group._id !== deletedGroupId));
+    setBalances(prev => {
+      const newBalances = { ...prev };
+      delete newBalances[deletedGroupId];
+      return newBalances;
+    });
+    toast.warn("A group was deleted!");
+  };
+
+  socket.on("groupDeleted", handleGroupDeleted);
+
+  return () => {
+    socket.off("groupDeleted", handleGroupDeleted);
+  };
+}, [socket]);
 
   
   const fetchGroups = async () => {
@@ -63,7 +162,7 @@ const { user } = useContext(UserContext);
       {/* Welcome Banner */}
       <div className=" hover:shadow-xl bg-gradient-to-b from-black to-gray-500 p-6 rounded-xl shadow text-center">
         <h2 className="text-3xl font-bold text-white">
-          Welcome back, {user.name}!
+          Welcome back, {user?.name}!
         </h2>
         <p className="text-gray-200 mt-2">Here's your spending overview.</p>
       </div>
@@ -202,7 +301,7 @@ const { user } = useContext(UserContext);
   <div className="px-6 py-4 space-y-4">
     {groups.length > 0 ? (
       groups.map((group) => {
-        console.log("user.email:", user.email);
+        console.log("user.email:", user?.email);
 console.log("group balances keys:", Object.keys(balances[group._id] || {}));
 
         // Get current user's balance in this group
@@ -245,9 +344,9 @@ const userBalance = Object.values(groupBalances).reduce((sum, amt) => sum + amt,
                         <span className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-background">
                           <img
   src={
-    member === user.email
+    member === user?.email
       ? (user.avatar || `https://i.pravatar.cc/150?u=${member}`) // logged-in user’s avatar
-      : `https://i.pravatar.cc/150?u=${member}` // other members' avatars
+      : (member.avatar || `https://i.pravatar.cc/150?u=${member}` )// other members' avatars
   }
   alt={member}
   className="w-5 h-5 rounded-full object-cover"
@@ -295,12 +394,13 @@ const userBalance = Object.values(groupBalances).reduce((sum, amt) => sum + amt,
 </div>
 
 
-      <section className="text-center py-8 border-t border-border">
+      
+    </div>
+    <section className="text-center py-8 border-t border-border">
         <p className="text-gray-600 text-sm text-muted-foreground">
           You're all caught up! Add an expense or settle up with friends.
         </p>
       </section>
-    </div>
      </div>
   );
   

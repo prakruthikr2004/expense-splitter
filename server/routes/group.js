@@ -2,6 +2,9 @@ import express from "express";
 import Group from "../models/Group.js";
 import GroupExpense from "../models/GroupExpense.js";
 import { verifyToken } from "../middleware/auth.js";
+import { io } from "../index.js";
+import { onlineUsers } from "../index.js";
+
 
 const router = express.Router();
 
@@ -18,6 +21,11 @@ router.post("/", verifyToken, async (req, res) => {
     });
 
     await newGroup.save();
+    io.emit("groupCreated", newGroup);
+    newGroup.members.forEach((memberEmail) => {
+  const socketId = onlineUsers[memberEmail]; // your map of email -> socket
+  io.to(socketId).emit("groupCreated", newGroup);
+});
     res.status(201).json(newGroup);
   } catch (err) {
     console.error(err);
@@ -62,7 +70,16 @@ router.delete("/:id", verifyToken, async (req, res) => {
     }
 
     await Group.findByIdAndDelete(req.params.id);
+    
     res.json({ message: "Group deleted successfully" });
+    io.emit("groupDeleted", group._id.toString());
+    group.members.forEach(memberEmail => {
+  const socketId = onlineUsers[memberEmail];
+  if (socketId) {
+    io.to(socketId).emit("groupDeleted", deletedGroupId);
+  }
+});
+
   } catch (err) {
     res.status(500).json({ message: "Error deleting group", error: err.message });
   }

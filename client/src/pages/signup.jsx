@@ -8,28 +8,45 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const strongPasswordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$.!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   const handleSignup = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch("http://localhost:5000/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
+  e.preventDefault();
 
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Signup successful! Please login.");
+  if (!strongPasswordRegex.test(password)) {
+    console.log("Frontend rejected password:", password);
+  toast.error("Password must be strong...");
+    return;
+  }
+  
+
+  try {
+    const res = await fetch("http://localhost:5000/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // ✅ Show message from backend
+      toast.success(data.message || "Verification email sent. Please check your inbox.");
+
+      // ⏳ Wait 2 seconds, then redirect to login
+      setTimeout(() => {
         navigate("/login");
-      } else {
-        toast.error(data.message || "Signup failed ❌");
-      }
-    } catch (err) {
-      toast.error("Something went wrong!");
-      console.error(err);
+      }, 2000);
+    } else {
+      toast.error(data.message || "Signup failed ❌");
     }
-  };
+  } catch (err) {
+    toast.error("Something went wrong!");
+    console.error(err);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex">
@@ -155,6 +172,16 @@ export default function Signup() {
               Create Account
             </button>
           </form>
+          <div className="text-center mt-4">
+  <button
+    onClick={() => (window.location.href = "http://localhost:5000/auth/google")}
+    className="w-full h-12 border border-gray-300 rounded-md flex items-center justify-center gap-2 hover:bg-gray-100 transition"
+  >
+    <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5" />
+    Continue with Google
+  </button>
+</div>
+
 
           <p className="text-center text-sm text-gray-600">
             Already have an account?{" "}

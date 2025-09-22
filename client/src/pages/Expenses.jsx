@@ -2,8 +2,7 @@ import { useContext, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ExpensesContext } from "../context/ExpensesContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
-
-
+import { useSocket } from "../context/SocketContext";
 
 import {
   TrendingUp,
@@ -18,26 +17,52 @@ import {
 } from "lucide-react";
 
 export default function Expenses() {
-  const { expenses, addExpense, deleteExpense } = useContext(ExpensesContext);
+  const { expenses, setExpenses, addExpense, deleteExpense } = useContext(ExpensesContext);
 
   const [type, setType] = useState("Expense");
-  const [statsView, setStatsView] = useState("cards"); // "cards" or "chart"
+  const [statsView, setStatsView] = useState("cards");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
   const [date, setDate] = useState("");
   const [activeTab, setActiveTab] = useState("history");
 
-
+  const socket = useSocket();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // 🔗 Real-time socket listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleExpenseAdded = (expense) => {
+      setExpenses((prev) => {
+        if (prev.some((e) => e._id === expense._id)) return prev; // prevent duplicates
+        return [expense, ...prev];
+      });
+    };
+
+    const handleExpenseDeleted = ({ id }) => {
+      setExpenses((prev) => prev.filter((e) => e._id !== id));
+    };
+
+    socket.on("expenseAdded", handleExpenseAdded);
+    socket.on("expenseDeleted", handleExpenseDeleted);
+
+    return () => {
+      socket.off("expenseAdded", handleExpenseAdded);
+      socket.off("expenseDeleted", handleExpenseDeleted);
+    };
+  }, [socket, setExpenses]);
+
+  // 🔗 URL param tab switch
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
     if (tab === "add") setActiveTab("add");
   }, [location.search]);
 
+  // ➕ Add expense form
   const handleAdd = (e) => {
     e.preventDefault();
     if (!amount || !category || !date) return;
@@ -57,7 +82,7 @@ export default function Expenses() {
     setActiveTab("history");
   };
 
-  // Calculations
+  // 🧮 Calculations
   const totalIncome = expenses
     .filter((e) => e.type === "Income")
     .reduce((acc, e) => acc + e.amount, 0);
@@ -71,173 +96,136 @@ export default function Expenses() {
   const formatRupee = (value) =>
     value.toLocaleString("en-IN", { style: "currency", currency: "INR" });
 
-  // Prepare chart data outside JSX
-const chartData = [
-  {
-    name: "Income",
-    value: totalIncome || 0.01, // fallback to avoid disappearing bars
-    fill: "green",
-  },
-  {
-    name: "Expenses",
-    value: totalExpenses || 0.01,
-    fill: "red",
-  },
-  {
-    name: "Net Balance",
-    value: balance || 0.01,
-    fill: balance >= 0 ? "#16a34a" : "#dc2626",
-  },
-];
+  // 📊 Chart Data
+  const chartData = [
+    { name: "Income", value: totalIncome || 0.01, fill: "green" },
+    { name: "Expenses", value: totalExpenses || 0.01, fill: "red" },
+    { name: "Net Balance", value: balance || 0.01, fill: balance >= 0 ? "#16a34a" : "#dc2626" },
+  ];
 
-const monthlySummary = expenses.reduce((acc, e) => {
-  const month = new Date(e.date).toISOString().slice(0, 7); // "2025-09"
-  if (!acc[month]) acc[month] = { income: 0, expense: 0 };
-  if (e.type === "Income") acc[month].income += e.amount;
-  else acc[month].expense += e.amount;
-  return acc;
-}, {});
+  const monthlySummary = expenses.reduce((acc, e) => {
+    const month = new Date(e.date).toISOString().slice(0, 7);
+    if (!acc[month]) acc[month] = { income: 0, expense: 0 };
+    if (e.type === "Income") acc[month].income += e.amount;
+    else acc[month].expense += e.amount;
+    return acc;
+  }, {});
 
-const balanceTrends = Object.entries(monthlySummary).map(([month, data]) => ({
-  month,
-  balance: data.income - data.expense,
-  income: data.income,
-  expense: data.expense,
-}));
+  const balanceTrends = Object.entries(monthlySummary).map(([month, data]) => ({
+    month,
+    balance: data.income - data.expense,
+    income: data.income,
+    expense: data.expense,
+  }));
 
   return (
     <div className="w-full h-screen px-6 py-2 grid grid-cols-1 lg:grid-cols-3 gap-3 overflow-hidden">
-      {/* Left: Stats */}
-<div className="lg:col-span-1 flex flex-col">
-  <h3 className="text-2xl font-semibold mb-1">Personal Tracker</h3>
-  <p className="text-gray-400 mb-2">Track your expenses and income </p>
+      {/* 📊 Left: Stats */}
+      <div className="lg:col-span-1 flex flex-col">
+        <h3 className="text-2xl font-semibold mb-1">Personal Tracker</h3>
+        <p className="text-gray-400 mb-2">Track your expenses and income </p>
 
-  <div className="flex flex-col gap-3">
-     {/* Toggle buttons */}
-  <div className="flex justify-end gap-2 mb-0">
-    <button
-      onClick={() => setStatsView("cards")}
-      className={`px-3 py-1 text-xs font-semibold rounded-lg border ${
-        statsView === "cards" ? "bg-black text-white" : "bg-white text-gray-600"
-      }`}
-    >
-      Cards
-    </button>
-    <button
-      onClick={() => setStatsView("chart")}
-      className={`px-3 py-1 text-xs font-semibold rounded-lg border ${
-        statsView === "chart" ? "bg-black text-white" : "bg-white text-gray-600"
-      }`}
-    >
-      Chart
-    </button>
-  </div>
-  {statsView === "cards" ? (
-  <div className="flex flex-col gap-3">
-     {[
-      {
-        label: "Total Income",
-        value: totalIncome,
-        icon: <TrendingUp className="w-6 h-6 text-green-600" />,
-        color: "text-green-600",
-        isMoney: true,
-      },
-      {
-        label: "Total Expenses",
-        value: totalExpenses,
-        icon: <TrendingDown className="w-6 h-6 text-red-600" />,
-        color: "text-red-600",
-        isMoney: true,
-      },
-      {
-        label: "Net Balance",
-        value: balance,
-        icon: <PiggyBank className="w-6 h-6 text-gray-500" />,
-        color: balance >= 0 ? "text-green-600" : "text-red-600",
-        isMoney: true,
-      },
-      {
-        label: "Transactions",
-        value: expenses.length,
-        icon: <FileText className="w-6 h-6 text-gray-500" />,
-        color: "text-gray-800",
-        isMoney: false,
-      },
-    ].map((card, idx) => (
-      <div
-        key={idx}
-        className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center justify-between hover:shadow-md transition"
-      >
-        <div>
-          <p className="text-xs text-gray-500">{card.label}</p>
-          <p className={`text-lg font-semibold ${card.color}`}>
-            {card.isMoney ? formatRupee(card.value) : card.value}
-          </p>
+        {/* Toggle buttons */}
+        <div className="flex justify-end gap-2 mb-0">
+          <button
+            onClick={() => setStatsView("cards")}
+            className={`px-3 py-1 text-xs font-semibold rounded-lg border ${
+              statsView === "cards" ? "bg-black text-white" : "bg-white text-gray-600"
+            }`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setStatsView("chart")}
+            className={`px-3 py-1 text-xs font-semibold rounded-lg border ${
+              statsView === "chart" ? "bg-black text-white" : "bg-white text-gray-600"
+            }`}
+          >
+            Chart
+          </button>
         </div>
-        {card.icon}
+
+        {statsView === "cards" ? (
+          <div className="flex flex-col gap-3">
+            {[
+              {
+                label: "Total Income",
+                value: totalIncome,
+                icon: <TrendingUp className="w-6 h-6 text-green-600" />,
+                color: "text-green-600",
+                isMoney: true,
+              },
+              {
+                label: "Total Expenses",
+                value: totalExpenses,
+                icon: <TrendingDown className="w-6 h-6 text-red-600" />,
+                color: "text-red-600",
+                isMoney: true,
+              },
+              {
+                label: "Net Balance",
+                value: balance,
+                icon: <PiggyBank className="w-6 h-6 text-gray-500" />,
+                color: balance >= 0 ? "text-green-600" : "text-red-600",
+                isMoney: true,
+              },
+              {
+                label: "Transactions",
+                value: expenses.length,
+                icon: <FileText className="w-6 h-6 text-gray-500" />,
+                color: "text-gray-800",
+                isMoney: false,
+              },
+            ].map((card, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center justify-between hover:shadow-md transition"
+              >
+                <div>
+                  <p className="text-xs text-gray-500">{card.label}</p>
+                  <p className={`text-lg font-semibold ${card.color}`}>
+                    {card.isMoney ? formatRupee(card.value) : card.value}
+                  </p>
+                </div>
+                {card.icon}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-xl border p-5 shadow-sm">
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData} layout="vertical">
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="name" />
+                <Tooltip formatter={(val) => formatRupee(val)} />
+                <Legend
+                  verticalAlign="bottom"
+                  align="center"
+                  payload={chartData.map((item) => ({
+                    value: item.name,
+                    color: item.fill,
+                    type: "square",
+                  }))}
+                />
+                <Bar dataKey="value">
+                  {chartData.map((entry, index) => (
+                    <Cell key={index} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
-    ))}
-  </div>
-) : (
-  
-  <div className="bg-gray-50 rounded-xl border p-5 shadow-sm">
-  <ResponsiveContainer width="100%" height={250}>
-    <BarChart
-      data={chartData}
-      layout="vertical" // horizontal bars; remove for vertical
-      margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
-    >
-      <XAxis type="number" />
-      <YAxis type="category" dataKey="name" />
-      <Tooltip formatter={(val) => val.toLocaleString("en-IN", { style: "currency", currency: "INR" })} />
-      <Legend
-  verticalAlign="bottom"
-  align="center"
-  content={({ payload }) => (
-    <div className="flex justify-center gap-6 mt-2 ">
-      {payload.map((entry, index) => (
-        <div key={index} className="flex items-center gap-1">
-          <span
-            className="w-3 h-3 rounded-sm"
-            style={{ backgroundColor: entry.color }}
-          ></span>
-          <span className="text-sm font-medium"></span>
-        </div>
-      ))}
-    </div>
-  )}
-  payload={chartData.map((item) => ({
-    value: item.name,
-    color: item.fill,
-    type: "square",
-  }))}
-/>
 
-      <Bar dataKey="value">
-        {chartData.map((entry, index) => (
-          <Cell key={index} fill={entry.fill} />
-        ))}
-      </Bar>
-    </BarChart>
-  </ResponsiveContainer>
-</div>
-
-)}
-   
-  </div>
-</div>
-
-
-      {/* Right: Toggle + Form / History */}
+      {/* 🧾 Right: Add / History */}
       <div className="lg:col-span-2 flex flex-col overflow-hidden">
-        {/* Toggle bar */}
+        {/* Tabs */}
         <div className="bg-gray-100 rounded-xl p-1 flex w-full mb-2">
           <button
             onClick={() => setActiveTab("add")}
             className={`flex-1 px-4 py-2 text-sm font-medium rounded-xl transition ${
-              activeTab === "add"
-                ? "bg-black text-white"
-                : "text-gray-500 hover:text-gray-800"
+              activeTab === "add" ? "bg-black text-white" : "text-gray-500 hover:text-gray-800"
             }`}
           >
             Add Transaction
@@ -245,19 +233,18 @@ const balanceTrends = Object.entries(monthlySummary).map(([month, data]) => ({
           <button
             onClick={() => setActiveTab("history")}
             className={`flex-1 px-4 py-2 text-sm font-medium rounded-xl transition ${
-              activeTab === "history"
-                ? "bg-black text-white"
-                : "text-gray-500 hover:text-gray-800"
+              activeTab === "history" ? "bg-black text-white" : "text-gray-500 hover:text-gray-800"
             }`}
           >
             Transaction History
           </button>
         </div>
 
+        {/* Add Form */}
         {activeTab === "add" && (
           <div className="bg-gray-100 rounded-xl border shadow p-4">
             <form onSubmit={handleAdd} className="space-y-2">
-              {/* Type Toggle */}
+              {/* Type toggle */}
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -289,9 +276,7 @@ const balanceTrends = Object.entries(monthlySummary).map(([month, data]) => ({
                   Amount
                 </label>
                 <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
-                    ₹
-                  </span>
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
                   <input
                     id="amount"
                     type="number"
@@ -361,16 +346,13 @@ const balanceTrends = Object.entries(monthlySummary).map(([month, data]) => ({
           </div>
         )}
 
+        {/* History */}
         {activeTab === "history" && (
           <div className="bg-white rounded-xl border shadow p-4 flex flex-col overflow-hidden">
-            <h4 className="text-base font-semibold mb-3">
-              Recent Transactions
-            </h4>
+            <h4 className="text-base font-semibold mb-3">Recent Transactions</h4>
             <div className="flex-1 overflow-y-auto">
               {expenses.length === 0 && (
-                <p className="text-gray-500 text-center text-sm">
-                  No transactions yet
-                </p>
+                <p className="text-gray-500 text-center text-sm">No transactions yet</p>
               )}
               {expenses.map((e) => (
                 <div
@@ -393,9 +375,7 @@ const balanceTrends = Object.entries(monthlySummary).map(([month, data]) => ({
                       </span>
                       <span
                         className={`text-sm font-medium ${
-                          e.type === "Income"
-                            ? "text-green-600"
-                            : "text-red-600"
+                          e.type === "Income" ? "text-green-600" : "text-red-600"
                         }`}
                       >
                         {e.type === "Income"
@@ -409,9 +389,7 @@ const balanceTrends = Object.entries(monthlySummary).map(([month, data]) => ({
                       <span>{e.category}</span>
                       <span>•</span>
                       <Calendar className="w-3 h-3" />
-                      <span>
-                        {new Date(e.date).toISOString().split("T")[0]}
-                      </span>
+                      <span>{new Date(e.date).toISOString().split("T")[0]}</span>
                     </div>
                   </div>
                   <button

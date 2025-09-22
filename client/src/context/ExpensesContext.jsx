@@ -19,25 +19,23 @@ export const ExpensesProvider = ({ children }) => {
     }
   };
 
-  // Add new expense
+  // Add new expense (just call API, socket will update state)
   const addExpense = async (expense) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/expenses", expense, {
+      await axios.post("http://localhost:5000/api/expenses", expense, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setExpenses([res.data, ...expenses]);
     } catch (err) {
       console.error("Error adding expense", err);
     }
   };
 
-  // Delete expense
+  // Delete expense (just call API, socket will update state)
   const deleteExpense = async (id) => {
     try {
       await axios.delete(`http://localhost:5000/api/expenses/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setExpenses(expenses.filter((e) => e._id !== id));
     } catch (err) {
       console.error("Error deleting expense", err);
     }
@@ -48,7 +46,7 @@ export const ExpensesProvider = ({ children }) => {
   }, [token]);
 
   return (
-    <ExpensesContext.Provider value={{ expenses, addExpense, deleteExpense }}>
+    <ExpensesContext.Provider value={{ expenses, setExpenses, addExpense, deleteExpense }}>
       {children}
     </ExpensesContext.Provider>
   );

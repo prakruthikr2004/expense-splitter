@@ -193,6 +193,16 @@ export default function Login() {
       Log In
     </button>
   </form>
+  <div className="text-center mt-4">
+  <button
+    onClick={() => (window.location.href = "http://localhost:5000/auth/google")}
+    className="w-full h-12 border border-gray-300 rounded-md flex items-center justify-center gap-2 hover:bg-gray-100 transition"
+  >
+    <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5" />
+    Continue with Google
+  </button>
+</div>
+
 
   <div className="text-center my-4">
     <button

@@ -3,12 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
+import { useSocket } from "../context/SocketContext";
+
+
 export default function GroupExpensePage() {
   const { id: groupId } = useParams();
   const [group, setGroup] = useState(null);
   const [expenses, setExpenses] = useState([]);
   const [balances, setBalances] = useState({});
   const [settlements, setSettlements] = useState([]);
+  const socket = useSocket();
   const [form, setForm] = useState({
     description: "",
     amount: "",
@@ -24,7 +28,47 @@ export default function GroupExpensePage() {
   const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
+
+
+useEffect(() => {
+  if (!socket || !user) return;
+
+  // Join personal room for receiving user-specific updates
+  socket.emit("joinUser", user.email);
+
+  // Optionally, you can listen to events here if not done elsewhere
+  const handleGroupUpdated = ({ expenses, balances, settlements }) => {
+    console.log("📡 Group realtime update:", { expenses, balances, settlements });
+    setExpenses(expenses);
+    setBalances(balances); // already user-specific
+    setSettlements(settlements);
+  };
+
+  socket.on("groupUpdated", handleGroupUpdated);
+
+  return () => {
+    socket.off("groupUpdated", handleGroupUpdated);
+  };
+}, [socket, user]);
+
+
+
+
   
+  // initial fetch (so you have data when joining)
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/group-expenses/group/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setExpenses(data.expenses || []);
+      setBalances(data.balances || {});
+      setSettlements(data.settlements || []);
+    };
+    fetchData();
+  }, [groupId]);
 
 
   // Fetch group, expenses, balances, and settlements
@@ -79,37 +123,60 @@ export default function GroupExpensePage() {
   };
 
   const handleAddExpense = async () => {
-    try {
-      const payload = {
-        ...form,
-        amount: Number(form.amount),
-        paidBy: user.email,
-        splitDetails: { ...form.splitDetails, [user.email]: form.splitDetails[user.email] || 0 },
-      };
+  if (!form.description || !form.amount || Number(form.amount) <= 0) {
+    toast.error("Please enter a valid description and amount");
+    return;
+  }
 
-      const res = await fetch(
-        `http://localhost:5000/api/group-expenses/group/${groupId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const data = await res.json();
-      if (res.ok) {
-        fetchGroupData(); // Refresh everything
-        setForm({ description: "", amount: "", splitType: "equal", splitDetails: {} });
-        setShowForm(false);
-        toast.success("Expense added successfully ✅");
-      } else {
-        toast.error(data.message || "Error adding expense ❌");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong ❌");
-    }
+  let payload = {
+    description: form.description,
+    amount: Number(form.amount),
+    paidBy: user.email,
+    splitType: form.splitType,
   };
+
+  if (form.splitType === "percentage") {
+    // Ensure all members have a number
+    payload.splitDetails = {};
+    group.members.forEach((m) => {
+      payload.splitDetails[m] = Number(form.splitDetails[m] || 0);
+    });
+
+    // Optional: sum check
+    const total = Object.values(payload.splitDetails).reduce((a, b) => a + b, 0);
+    if (total !== 100) {
+      toast.error("Percentages must sum to 100");
+      return;
+    }
+  }
+
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/group-expenses/group/${groupId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await res.json();
+    if (res.ok) {
+  fetchGroupData(); // Refresh everything
+   setForm({ description: "", amount: "", splitType: "equal", splitDetails: {} });
+   setShowForm(false);
+   toast.success("Expense added successfully ✅");
+}
+
+    else {
+      toast.error(data.message || "Error adding expense ❌");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Something went wrong ❌");
+  }
+};
+
 
   const handleDeleteExpense = (expenseId) => {
     confirmDeleteToast(async () => {
@@ -120,9 +187,9 @@ export default function GroupExpensePage() {
         });
         const data = await res.json();
         if (res.ok) {
-          fetchGroupData(); // Refresh everything
-          toast.success("Expense deleted successfully ✅");
-        } else {
+ fetchGroupData(); // Refresh everything
+   toast.success("Expense deleted successfully ✅");
+} else {
           toast.error(data.message || "Error deleting expense ❌");
         }
       } catch (err) {
@@ -174,8 +241,9 @@ export default function GroupExpensePage() {
                   );
                   const data = await res.json();
                   if (res.ok) {
-                    fetchGroupData(); // Refresh everything
-                    toast.success(`Settled ₹${amt.toFixed(2)} with ${otherUser} ✅`);
+  fetchGroupData(); // Refresh everything
+   toast.success(`Settled ₹${amt.toFixed(2)} with ${otherUser} ✅`);
+
                   } else {
                     toast.error(data.message || "Error settling ❌");
                   }
@@ -475,3 +543,4 @@ export default function GroupExpensePage() {
     </div>
   );
 }
+
