@@ -1,43 +1,33 @@
+// server/config/passport.js
 import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
+
+// COMMENT OUT Google OAuth for now
+// import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+
+// If you have other strategies (e.g., JWT), keep them
+// Example JWT setup:
+import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
+
+const opts = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: process.env.JWT_SECRET,
+};
 
 passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback",
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // create JWT token for your app
-        const token = jwt.sign(
-          {
-            id: profile.id,
-            email: profile.emails[0].value,
-            name: profile.displayName,
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: "1h" }
-        );
-
-        return done(null, { profile, token });
-      } catch (err) {
-        return done(err, null);
-      }
+  new JwtStrategy(opts, (jwt_payload, done) => {
+    try {
+      // Replace with your user lookup logic
+      const user = { id: jwt_payload.id, email: jwt_payload.email };
+      if (user) return done(null, user);
+      else return done(null, false);
+    } catch (err) {
+      return done(err, false);
     }
-  )
+  })
 );
 
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.deserializeUser((obj, done) => {
-  done(null, obj);
-});
+// Optional: Serialize / deserialize user if using sessions
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
 
 export default passport;
