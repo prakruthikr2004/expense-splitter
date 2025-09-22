@@ -25,7 +25,7 @@ function validatePassword(password) {
 
 
 // ---------------- Google OAuth Setup ----------------
-passport.use(
+/* passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,   // put in .env
@@ -80,7 +80,7 @@ router.get(
     // redirect back to frontend with token
     res.redirect(`http://localhost:5173/oauth-success?token=${token}`);
   }
-);
+); */
 
 
 // ✨ Update Name
