@@ -25,12 +25,12 @@ function validatePassword(password) {
 
 
 // ---------------- Google OAuth Setup ----------------
-/* passport.use(
+passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,   // put in .env
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:5000/auth/google/callback",
+      callbackURL: "https://expense-splitter-nsts.onrender.com/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -80,7 +80,7 @@ router.get(
     // redirect back to frontend with token
     res.redirect(`http://localhost:5173/oauth-success?token=${token}`);
   }
-); */
+);
 
 
 // ✨ Update Name
