@@ -59,7 +59,7 @@ useEffect(() => {
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/group-expenses/group/${groupId}`, {
+      const res = await fetch(`https://expense-splitter-nsts.onrender.com/api/group-expenses/group/${groupId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -74,7 +74,7 @@ useEffect(() => {
   // Fetch group, expenses, balances, and settlements
   const fetchGroupData = async () => {
     try {
-      const resGroup = await fetch(`http://localhost:5000/groups/${groupId}`, {
+      const resGroup = await fetch(`https://expense-splitter-nsts.onrender.com/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -93,7 +93,7 @@ useEffect(() => {
       setGroup(groupData);
 
       const resData = await fetch(
-        `http://localhost:5000/api/group-expenses/group/${groupId}`,
+        `https://expense-splitter-nsts.onrender.com/api/group-expenses/group/${groupId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -152,7 +152,7 @@ useEffect(() => {
 
   try {
     const res = await fetch(
-      `http://localhost:5000/api/group-expenses/group/${groupId}`,
+      `https://expense-splitter-nsts.onrender.com/api/group-expenses/group/${groupId}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -181,7 +181,7 @@ useEffect(() => {
   const handleDeleteExpense = (expenseId) => {
     confirmDeleteToast(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/group-expenses/${expenseId}`, {
+        const res = await fetch(`https://expense-splitter-nsts.onrender.com/api/group-expenses/${expenseId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -232,7 +232,7 @@ useEffect(() => {
                 closeToast();
                 try {
                   const res = await fetch(
-                    `http://localhost:5000/api/group-expenses/group/${groupId}/settle`,
+                    `https://expense-splitter-nsts.onrender.com/api/group-expenses/group/${groupId}/settle`,
                     {
                       method: "POST",
                       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

@@ -10,7 +10,7 @@ export default function GroupList({ refresh }) {
       if (!token) return;
 
       try {
-        const res = await fetch("http://localhost:5000/groups", {
+        const res = await fetch("https://expense-splitter-nsts.onrender.com/groups", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

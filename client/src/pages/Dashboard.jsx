@@ -87,14 +87,14 @@ useEffect(() => {
   const fetchDebts = async () => {
     if (!user?.email) return; 
     try {
-      const res = await fetch(`http://localhost:5000/groups/user/${user.email}`, {
+      const res = await fetch(`https://expense-splitter-nsts.onrender.com/groups/user/${user.email}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const groups = await res.json();
       let debtNotes = [];
 
       for (const group of groups) {
-        const resExpenses = await fetch(`http://localhost:5000/api/group-expenses/group/${group._id}`, {
+        const resExpenses = await fetch(`https://expense-splitter-nsts.onrender.com/api/group-expenses/group/${group._id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         const { expenses } = await resExpenses.json();

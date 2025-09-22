@@ -21,7 +21,7 @@ export const SocketProvider = ({ children }) => {
     // ✅ Only create socket once (if it doesn’t exist yet)
     if (socket) return;
 
-    const s = io("http://localhost:5000", { auth: { token } });
+    const s = io("https://expense-splitter-nsts.onrender.com", { auth: { token } });
     setSocket(s);
 
     s.on("connect", () => console.log("✅ Socket connected:", s.id));

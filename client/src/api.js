@@ -1,4 +1,4 @@
-export const API_BASE = "http://localhost:5000";
+export const API_BASE = "https://expense-splitter-nsts.onrender.com";
 
 export async function api(path, { method = "GET", body, token } = {}) {
   const res = await fetch(`${API_BASE}${path}`, {

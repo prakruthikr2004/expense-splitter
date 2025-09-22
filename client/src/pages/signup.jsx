@@ -22,7 +22,7 @@ export default function Signup() {
   
 
   try {
-    const res = await fetch("http://localhost:5000/auth/signup", {
+    const res = await fetch("https://expense-splitter-nsts.onrender.com/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
@@ -174,7 +174,7 @@ export default function Signup() {
           </form>
           <div className="text-center mt-4">
   <button
-    onClick={() => (window.location.href = "http://localhost:5000/auth/google")}
+    onClick={() => (window.location.href = "https://expense-splitter-nsts.onrender.com/auth/google")}
     className="w-full h-12 border border-gray-300 rounded-md flex items-center justify-center gap-2 hover:bg-gray-100 transition"
   >
     <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5" />

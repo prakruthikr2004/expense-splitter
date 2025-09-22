@@ -25,7 +25,7 @@ export default function GroupForm({ onGroupCreated }) {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:5000/groups", {
+      const res = await fetch("https://expense-splitter-nsts.onrender.com/groups", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
