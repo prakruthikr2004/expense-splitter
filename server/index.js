@@ -99,17 +99,15 @@ socket.on("joinGroup", (groupId) => {
   });
 
 
-  socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
-  });
-
-  socket.on("disconnect", () => {
-    for (let email in onlineUsers) {
-      if (onlineUsers[email] === socket.id) {
-        delete onlineUsers[email];
-      }
+ socket.on("disconnect", () => {
+  console.log("❌ Client disconnected:", socket.id);
+  for (let email in onlineUsers) {
+    if (onlineUsers[email] === socket.id) {
+      delete onlineUsers[email];
     }
-  });
+  }
+});
+
 
 
 });
@@ -140,7 +138,7 @@ app.get(
     );
 
     // Redirect to frontend with token
-    res.redirect(`http://localhost:5173/oauth-success?token=${token}`);
+    res.redirect(`${process.env.CLIENT_ORIGIN}/oauth-success?token=${token}`);
   }
 );
 
