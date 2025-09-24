@@ -1,6 +1,7 @@
-
+import React from "react";
 import ReactDOM from "react-dom/client";
 import './theme.css';
+import './index.css';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import App from "./App.jsx";
@@ -14,6 +15,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { ExpensesProvider } from "./context/ExpensesContext.jsx";
 import { UserProvider } from "./context/UserContext.jsx";
 import GroupExpenses from "./pages/GroupExpensePage.jsx";
+import { ThemeProvider } from "./context/ThemeContext";
 import OAuthSuccess from "./pages/OAuthSuccess";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import { SocketProvider } from "./context/SocketContext.jsx";
