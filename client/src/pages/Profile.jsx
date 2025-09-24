@@ -53,7 +53,7 @@ useEffect(() => {
   const fetchUser = async () => {
     if (!token) return;
     try {
-      const res = await fetch("http://localhost:5000/users/me", {
+      const res = await fetch(`${process.env.VITE_API_URL}/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -72,7 +72,7 @@ useEffect(() => {
   const handleUpdate = async () => {
     if (!newName.trim()) return toast.error("Name cannot be empty!");
     try {
-      const res = await fetch("http://localhost:5000/users/update-name", {
+      const res = await fetch(`${process.env.VITE_API_URL}/users/update-name`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: newName }),
@@ -111,7 +111,7 @@ useEffect(() => {
             onClick={async () => {
               closeToast();
               try {
-                const res = await fetch("http://localhost:5000/users/me", {
+                const res = await fetch(`${process.env.VITE_API_URL}/users/me`, {
                   method: "DELETE",
                   headers: { Authorization: `Bearer ${token}` },
                 });
@@ -162,7 +162,7 @@ const handleAvatarChange = async (e) => {
     formData.append("avatar", file);
 
     try {
-      const res = await fetch("http://localhost:5000/users/avatar", {
+      const res = await fetch(`${process.env.VITE_API_URL}/users/avatar`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,

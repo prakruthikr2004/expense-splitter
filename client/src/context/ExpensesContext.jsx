@@ -10,7 +10,7 @@ export const ExpensesProvider = ({ children }) => {
   // Fetch expenses from backend
   const fetchExpenses = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/expenses", {
+      const res = await axios.get(`${process.env.VITE_API_URL}/api/expenses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setExpenses(res.data);
@@ -22,7 +22,7 @@ export const ExpensesProvider = ({ children }) => {
   // Add new expense (just call API, socket will update state)
   const addExpense = async (expense) => {
     try {
-      await axios.post("http://localhost:5000/api/expenses", expense, {
+      await axios.post(`${process.env.VITE_API_URL}/api/expenses`, expense, {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
@@ -33,7 +33,7 @@ export const ExpensesProvider = ({ children }) => {
   // Delete expense (just call API, socket will update state)
   const deleteExpense = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/expenses/${id}`, {
+      await axios.delete(`${process.env.VITE_API_URL}/api/expenses/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {

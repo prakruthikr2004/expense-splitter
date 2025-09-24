@@ -9,7 +9,7 @@ export default function GroupDetail() {
   useEffect(() => {
     const fetchGroup = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/groups/${id}`, {
+        const res = await fetch(`${process.env.VITE_API_URL}/groups/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

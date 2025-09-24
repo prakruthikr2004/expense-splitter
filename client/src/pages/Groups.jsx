@@ -45,7 +45,7 @@ export default function Groups() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/groups", {
+      const res = await fetch(`${process.env.VITE_API_URL}/groups`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch groups");
@@ -56,7 +56,7 @@ export default function Groups() {
         data.map(async (group) => {
           try {
             const summaryRes = await fetch(
-              `http://localhost:5000/groups/${group._id}/summary`,
+              `${process.env.VITE_API_URL}/groups/${group._id}/summary`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!summaryRes.ok) throw new Error("Failed to fetch summary");
@@ -124,7 +124,7 @@ export default function Groups() {
   const handleDeleteGroup = (groupId) => {
     confirmGroupDeleteToast(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/groups/${groupId}`, {
+        const res = await fetch(`${process.env.VITE_API_URL}/groups/${groupId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
