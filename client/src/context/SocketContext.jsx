@@ -21,7 +21,7 @@ export const SocketProvider = ({ children }) => {
     // ✅ Only create socket once (if it doesn’t exist yet)
     if (socket) return;
 
-    const s = io(`${process.env.VITE_API_URL}`, { auth: { token } });
+    const s = io(`${import.meta.env.VITE_API_URL}`, { auth: { token } });
     setSocket(s);
 
     s.on("connect", () => console.log("✅ Socket connected:", s.id));

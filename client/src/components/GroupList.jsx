@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+
 export default function GroupList({ refresh }) {
   const [groups, setGroups] = useState([]);
 
@@ -10,7 +11,7 @@ export default function GroupList({ refresh }) {
       if (!token) return;
 
       try {
-        const res = await fetch(`${process.env.VITE_API_URL}/groups`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/groups`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

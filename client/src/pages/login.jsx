@@ -11,7 +11,7 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${process.env.VITE_API_URL}/auth/login`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -195,7 +195,7 @@ export default function Login() {
   </form>
   <div className="text-center mt-4">
   <button
-    onClick={() => (window.location.href = `${process.env.VITE_API_URL}/auth/google`)}
+    onClick={() => (window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`)}
     className="w-full h-12 border border-gray-300 rounded-md flex items-center justify-center gap-2 hover:bg-gray-100 transition"
   >
     <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5" />

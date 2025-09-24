@@ -4,6 +4,8 @@ import { UserContext } from "../context/UserContext";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Menu, X, Wallet, Users2Icon, Home as HomeIcon, LogOut, User, Bell } from "lucide-react";
 
+
+
 export default function DashboardLayout() {
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -87,14 +89,14 @@ useEffect(() => {
   const fetchDebts = async () => {
     if (!user?.email) return; 
     try {
-      const res = await fetch(`${process.env.VITE_API_URL}/groups/user/${user.email}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/groups/user/${user.email}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const groups = await res.json();
       let debtNotes = [];
 
       for (const group of groups) {
-        const resExpenses = await fetch(`${process.env.VITE_API_URL}/api/group-expenses/group/${group._id}`, {
+        const resExpenses = await fetch(`${import.meta.env.VITE_API_URL}/api/group-expenses/group/${group._id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         const { expenses } = await resExpenses.json();

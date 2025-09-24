@@ -74,7 +74,7 @@ useEffect(() => {
     // fetch balances for this new group
     try {
       const res = await fetch(
-        `${process.env.VITE_API_URL}/api/group-expenses/group/${newGroup._id}`,
+        `${import.meta.env.VITE_API_URL}/api/group-expenses/group/${newGroup._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
@@ -117,7 +117,7 @@ useEffect(() => {
   
   const fetchGroups = async () => {
     try {
-      const res = await fetch(`${process.env.VITE_API_URL}/groups`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/groups`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -130,7 +130,7 @@ useEffect(() => {
 
       for (const group of groupData) {
         const resExp = await fetch(
-          `${process.env.VITE_API_URL}/api/group-expenses/group/${group._id}`,
+          `${import.meta.env.VITE_API_URL}/api/group-expenses/group/${group._id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 

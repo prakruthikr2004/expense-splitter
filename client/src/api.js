@@ -1,4 +1,4 @@
-export const API_BASE = `${process.env.VITE_API_URL}`;
+export const API_BASE = `${import.meta.env.VITE_API_URL}`;
 
 export async function api(path, { method = "GET", body, token } = {}) {
   const res = await fetch(`${API_BASE}${path}`, {

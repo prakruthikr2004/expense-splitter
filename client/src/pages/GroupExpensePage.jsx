@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell
 import { useSocket } from "../context/SocketContext";
 
 
+
 export default function GroupExpensePage() {
   const { id: groupId } = useParams();
   const [group, setGroup] = useState(null);
@@ -59,7 +60,7 @@ useEffect(() => {
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.VITE_API_URL}/api/group-expenses/group/${groupId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/group-expenses/group/${groupId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -74,7 +75,7 @@ useEffect(() => {
   // Fetch group, expenses, balances, and settlements
   const fetchGroupData = async () => {
     try {
-      const resGroup = await fetch(`${process.env.VITE_API_URL}/groups/${groupId}`, {
+      const resGroup = await fetch(`${import.meta.env.VITE_API_URL}/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -93,7 +94,7 @@ useEffect(() => {
       setGroup(groupData);
 
       const resData = await fetch(
-        `${process.env.VITE_API_URL}/api/group-expenses/group/${groupId}`,
+        `${import.meta.env.VITE_API_URL}/api/group-expenses/group/${groupId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -152,7 +153,7 @@ useEffect(() => {
 
   try {
     const res = await fetch(
-      `${process.env.VITE_API_URL}/api/group-expenses/group/${groupId}`,
+      `${import.meta.env.VITE_API_URL}/api/group-expenses/group/${groupId}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -181,7 +182,7 @@ useEffect(() => {
   const handleDeleteExpense = (expenseId) => {
     confirmDeleteToast(async () => {
       try {
-        const res = await fetch(`${process.env.VITE_API_URL}/api/group-expenses/${expenseId}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/group-expenses/${expenseId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -232,7 +233,7 @@ useEffect(() => {
                 closeToast();
                 try {
                   const res = await fetch(
-                    `${process.env.VITE_API_URL}/api/group-expenses/group/${groupId}/settle`,
+                    `${import.meta.env.VITE_API_URL}/api/group-expenses/group/${groupId}/settle`,
                     {
                       method: "POST",
                       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

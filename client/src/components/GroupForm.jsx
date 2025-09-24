@@ -25,7 +25,7 @@ export default function GroupForm({ onGroupCreated }) {
     e.preventDefault();
 
     try {
-      const res = await fetch(`${process.env.VITE_API_URL}/groups`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/groups`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

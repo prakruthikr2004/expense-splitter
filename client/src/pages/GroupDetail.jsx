@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+
 export default function GroupDetail() {
   const { id } = useParams();
   const [group, setGroup] = useState(null);
@@ -9,7 +10,7 @@ export default function GroupDetail() {
   useEffect(() => {
     const fetchGroup = async () => {
       try {
-        const res = await fetch(`${process.env.VITE_API_URL}/groups/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/groups/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

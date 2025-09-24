@@ -9,6 +9,7 @@ import { Plus, Users ,Trash2 } from "lucide-react";
 import { UserContext } from "../context/UserContext";
 import { useSocket, SocketProvider } from "../context/SocketContext";
 
+
 export default function Groups() {
   const [groups, setGroups] = useState([]);
    
@@ -45,7 +46,7 @@ export default function Groups() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.VITE_API_URL}/groups`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/groups`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch groups");
@@ -56,7 +57,7 @@ export default function Groups() {
         data.map(async (group) => {
           try {
             const summaryRes = await fetch(
-              `${process.env.VITE_API_URL}/groups/${group._id}/summary`,
+              `${import.meta.env.VITE_API_URL}/groups/${group._id}/summary`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!summaryRes.ok) throw new Error("Failed to fetch summary");
@@ -124,7 +125,7 @@ export default function Groups() {
   const handleDeleteGroup = (groupId) => {
     confirmGroupDeleteToast(async () => {
       try {
-        const res = await fetch(`${process.env.VITE_API_URL}/groups/${groupId}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/groups/${groupId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });

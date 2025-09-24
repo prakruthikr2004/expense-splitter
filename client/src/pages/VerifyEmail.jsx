@@ -9,7 +9,7 @@ export default function VerifyEmail() {
   useEffect(() => {
     async function verify() {
       try {
-        await axios.get(`${process.env.VITE_API_URL}/auth/verify/${token}`);
+        await axios.get(`${import.meta.env.VITE_API_URL}/auth/verify/${token}`);
         alert("Email verified successfully! You can now log in.");
         navigate("/login");
       } catch (err) {
