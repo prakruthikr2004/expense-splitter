@@ -9,7 +9,7 @@ export async function sendVerificationEmail(email, token) {
     },
   });
 
-  const verificationLink = `http://localhost:5173/verify-email/${token}`;
+  const verificationLink = `https://splitmate-f1urcadlf-prakruthis-projects-c7bd3802.vercel.app/verify-email/${token}`;
 
   try {
     await transporter.sendMail({
