@@ -23,7 +23,8 @@ const app = express();
 // ---------------- Allowed Origins ----------------
 const allowedOrigins = [
   "http://localhost:5173", // local dev frontend
-  "https://splitmate-phi.vercel.app", // deployed frontend
+  "https://splitmate-phi.vercel.app",
+  `${process.env.CLIENT_ORIGIN}`,// deployed frontend
 ];
 
 // ---------------- Express Middleware ----------------
@@ -141,7 +142,7 @@ app.get(
       { expiresIn: "7d" }
     );
 
-    res.redirect(`http://localhost:5173/oauth-success?token=${token}`);
+    res.redirect(`${process.env.CLIENT_ORIGIN}/oauth-success?token=${token}`);
   }
 );
 

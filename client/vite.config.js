@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "http://localhost:5000"
+      "/api": "https://splitmate-9g1f.onrender.com"
     }
   }
 });
