@@ -26,7 +26,10 @@ export default function Signup() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
+      
     });
+    console.log("API URL:", import.meta.env.VITE_API_URL);
+
 
     const data = await res.json();
 
