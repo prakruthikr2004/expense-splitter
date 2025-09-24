@@ -5,7 +5,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "https://expense-splitter-nsts.onrender.com"
+      "/api": "https://expense-splitter-nsts.onrender.com" // only for dev
     }
-  }
+  },
+  build: {
+    outDir: "build", // <- production output folder for Vercel
+  },
 });
