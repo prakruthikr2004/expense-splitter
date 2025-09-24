@@ -9,7 +9,7 @@ export async function sendVerificationEmail(email, token) {
     },
   });
 
-  const verificationLink = `https://splitmate-phi.vercel.app/verify-email/${token}`;
+  const verificationLink = `${process.env.CLIENT_ORIGIN}/verify-email/${token}`;
 
   try {
     await transporter.sendMail({
