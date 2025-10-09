@@ -216,7 +216,7 @@ export default function Expenses() {
 {activeTab === "history" && (
   <div className="bg-white rounded-xl border shadow p-4 flex flex-col flex-1">
     <h4 className="text-base font-semibold mb-3">Recent Transactions</h4>
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto height-80">
       {expenses.length === 0 && (
         <p className="text-gray-500 text-center text-sm">No transactions yet</p>
       )}
