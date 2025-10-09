@@ -4,7 +4,6 @@ import { ExpensesContext } from "../context/ExpensesContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
 import { useSocket } from "../context/SocketContext";
 
-
 import {
   TrendingUp,
   TrendingDown,
@@ -38,7 +37,7 @@ export default function Expenses() {
 
     const handleExpenseAdded = (expense) => {
       setExpenses((prev) => {
-        if (prev.some((e) => e._id === expense._id)) return prev; // prevent duplicates
+        if (prev.some((e) => e._id === expense._id)) return prev;
         return [expense, ...prev];
       });
     };
@@ -104,123 +103,110 @@ export default function Expenses() {
     { name: "Net Balance", value: balance || 0.01, fill: balance >= 0 ? "#16a34a" : "#dc2626" },
   ];
 
-  const monthlySummary = expenses.reduce((acc, e) => {
-    const month = new Date(e.date).toISOString().slice(0, 7);
-    if (!acc[month]) acc[month] = { income: 0, expense: 0 };
-    if (e.type === "Income") acc[month].income += e.amount;
-    else acc[month].expense += e.amount;
-    return acc;
-  }, {});
-
-  const balanceTrends = Object.entries(monthlySummary).map(([month, data]) => ({
-    month,
-    balance: data.income - data.expense,
-    income: data.income,
-    expense: data.expense,
-  }));
-
   return (
-    <div className="w-full h-screen px-6 py-2 grid grid-cols-1 lg:grid-cols-3 gap-3 overflow-hidden">
+    <div className="w-full h-screen px-4 lg:px-6 py-2 grid grid-cols-1 lg:grid-cols-3 gap-3 overflow-hidden">
       {/* 📊 Left: Stats */}
-      <div className="lg:col-span-1 flex flex-col">
-        <h3 className="text-2xl font-semibold mb-1">Personal Tracker</h3>
-        <p className="text-gray-400 mb-2">Track your expenses and income </p>
+      <div className="lg:col-span-1 flex flex-col justify-between h-full">
+        <div>
+          <h3 className="text-2xl font-semibold mb-1">Personal Tracker</h3>
+          <p className="text-gray-400 mb-2">Track your expenses and income</p>
 
-        {/* Toggle buttons */}
-        <div className="flex justify-end gap-2 mb-0">
-          <button
-            onClick={() => setStatsView("cards")}
-            className={`px-3 py-1 text-xs font-semibold rounded-lg border ${
-              statsView === "cards" ? "bg-black text-white" : "bg-white text-gray-600"
-            }`}
-          >
-            Cards
-          </button>
-          <button
-            onClick={() => setStatsView("chart")}
-            className={`px-3 py-1 text-xs font-semibold rounded-lg border ${
-              statsView === "chart" ? "bg-black text-white" : "bg-white text-gray-600"
-            }`}
-          >
-            Chart
-          </button>
-        </div>
+          {/* Toggle buttons */}
+          <div className="flex justify-end gap-2 mb-2">
+            <button
+              onClick={() => setStatsView("cards")}
+              className={`px-3 py-1 text-xs font-semibold rounded-lg border ${
+                statsView === "cards" ? "bg-black text-white" : "bg-white text-gray-600"
+              }`}
+            >
+              Cards
+            </button>
+            <button
+              onClick={() => setStatsView("chart")}
+              className={`px-3 py-1 text-xs font-semibold rounded-lg border ${
+                statsView === "chart" ? "bg-black text-white" : "bg-white text-gray-600"
+              }`}
+            >
+              Chart
+            </button>
+          </div>
 
-        {statsView === "cards" ? (
-          <div className="flex flex-col gap-3">
-            {[
-              {
-                label: "Total Income",
-                value: totalIncome,
-                icon: <TrendingUp className="w-6 h-6 text-green-600" />,
-                color: "text-green-600",
-                isMoney: true,
-              },
-              {
-                label: "Total Expenses",
-                value: totalExpenses,
-                icon: <TrendingDown className="w-6 h-6 text-red-600" />,
-                color: "text-red-600",
-                isMoney: true,
-              },
-              {
-                label: "Net Balance",
-                value: balance,
-                icon: <PiggyBank className="w-6 h-6 text-gray-500" />,
-                color: balance >= 0 ? "text-green-600" : "text-red-600",
-                isMoney: true,
-              },
-              {
-                label: "Transactions",
-                value: expenses.length,
-                icon: <FileText className="w-6 h-6 text-gray-500" />,
-                color: "text-gray-800",
-                isMoney: false,
-              },
-            ].map((card, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center justify-between hover:shadow-md transition"
-              >
-                <div>
-                  <p className="text-xs text-gray-500">{card.label}</p>
-                  <p className={`text-lg font-semibold ${card.color}`}>
-                    {card.isMoney ? formatRupee(card.value) : card.value}
-                  </p>
+          {statsView === "cards" ? (
+            <div className="flex flex-col gap-3 pb-6">
+              {[
+                {
+                  label: "Total Income",
+                  value: totalIncome,
+                  icon: <TrendingUp className="w-6 h-6 text-green-600" />,
+                  color: "text-green-600",
+                  isMoney: true,
+                },
+                {
+                  label: "Total Expenses",
+                  value: totalExpenses,
+                  icon: <TrendingDown className="w-6 h-6 text-red-600" />,
+                  color: "text-red-600",
+                  isMoney: true,
+                },
+                {
+                  label: "Net Balance",
+                  value: balance,
+                  icon: <PiggyBank className="w-6 h-6 text-gray-500" />,
+                  color: balance >= 0 ? "text-green-600" : "text-red-600",
+                  isMoney: true,
+                },
+                {
+                  label: "Transactions",
+                  value: expenses.length,
+                  icon: <FileText className="w-6 h-6 text-gray-500" />,
+                  color: "text-gray-800",
+                  isMoney: false,
+                },
+              ].map((card, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center justify-between hover:shadow-md transition"
+                >
+                  <div>
+                    <p className="text-xs text-gray-500">{card.label}</p>
+                    <p className={`text-lg font-semibold ${card.color}`}>
+                      {card.isMoney ? formatRupee(card.value) : card.value}
+                    </p>
+                  </div>
+                  {card.icon}
                 </div>
-                {card.icon}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-gray-50 rounded-xl border p-5 shadow-sm">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={chartData} layout="vertical">
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="name" />
-                <Tooltip formatter={(val) => formatRupee(val)} />
-                <Legend
-                  verticalAlign="bottom"
-                  align="center"
-                  payload={chartData.map((item) => ({
-                    value: item.name,
-                    color: item.fill,
-                    type: "square",
-                  }))}
-                />
-                <Bar dataKey="value">
-                  {chartData.map((entry, index) => (
-                    <Cell key={index} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-xl border p-5 shadow-sm pb-6">
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={chartData} layout="vertical">
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" />
+                  <Tooltip formatter={(val) => formatRupee(val)} />
+                  <Legend
+                    verticalAlign="bottom"
+                    align="center"
+                    payload={chartData.map((item) => ({
+                      value: item.name,
+                      color: item.fill,
+                      type: "square",
+                    }))}
+                  />
+                  <Bar dataKey="value">
+                    {chartData.map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 🧾 Right: Add / History */}
-      <div className="lg:col-span-2 flex flex-col overflow-hidden">
+      <div className="lg:col-span-2 flex flex-col overflow-hidden h-full">
         {/* Tabs */}
         <div className="bg-gray-100 rounded-xl p-1 flex w-full mb-2">
           <button
@@ -243,9 +229,8 @@ export default function Expenses() {
 
         {/* Add Form */}
         {activeTab === "add" && (
-          <div className="bg-gray-100 rounded-xl border shadow p-4">
+          <div className="bg-gray-100 rounded-xl border shadow p-4 mb-2">
             <form onSubmit={handleAdd} className="space-y-2">
-              {/* Type toggle */}
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -271,7 +256,6 @@ export default function Expenses() {
                 </button>
               </div>
 
-              {/* Amount */}
               <div className="space-y-1">
                 <label htmlFor="amount" className="text-xs font-medium">
                   Amount
@@ -291,7 +275,6 @@ export default function Expenses() {
                 </div>
               </div>
 
-              {/* Note */}
               <div className="space-y-1">
                 <label htmlFor="note" className="text-xs font-medium">
                   Description
@@ -306,7 +289,6 @@ export default function Expenses() {
                 />
               </div>
 
-              {/* Category */}
               <div className="space-y-1">
                 <label htmlFor="category" className="text-xs font-medium">
                   Category
@@ -322,7 +304,6 @@ export default function Expenses() {
                 />
               </div>
 
-              {/* Date */}
               <div className="space-y-1">
                 <label htmlFor="date" className="text-xs font-medium">
                   Date
@@ -349,9 +330,9 @@ export default function Expenses() {
 
         {/* History */}
         {activeTab === "history" && (
-          <div className="bg-white rounded-xl border shadow p-4 flex flex-col overflow-hidden">
+          <div className="bg-white rounded-xl border shadow p-4 flex flex-col flex-1 overflow-hidden">
             <h4 className="text-base font-semibold mb-3">Recent Transactions</h4>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-auto">
               {expenses.length === 0 && (
                 <p className="text-gray-500 text-center text-sm">No transactions yet</p>
               )}
