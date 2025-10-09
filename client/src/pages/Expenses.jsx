@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useRef } from "react";
+import { useContext, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ExpensesContext } from "../context/ExpensesContext";
 import {
@@ -37,16 +37,14 @@ export default function Expenses() {
   const socket = useSocket();
   const navigate = useNavigate();
   const location = useLocation();
-  const initialized = useRef(false); // ✅ prevent duplicate socket listeners
 
   /* -------------------- SOCKET LISTENERS -------------------- */
   useEffect(() => {
-    if (!socket || initialized.current) return;
-    initialized.current = true; // ensure it runs once
+    if (!socket) return;
 
     const handleExpenseAdded = (expense) => {
       setExpenses((prev) => {
-        if (!expense?._id || prev.some((e) => e._id === expense._id)) return prev;
+        if (prev.some((e) => e._id === expense._id)) return prev;
         return [expense, ...prev];
       });
     };
@@ -64,38 +62,12 @@ export default function Expenses() {
     };
   }, [socket, setExpenses]);
 
-  /* -------------------- DEDUPLICATE ON MOUNT -------------------- */
-  useEffect(() => {
-    setExpenses((prev) => {
-      const seen = new Set();
-      return prev.filter((e) => {
-        if (!e._id || seen.has(e._id)) return false;
-        seen.add(e._id);
-        return true;
-      });
-    });
-  }, []);
-
   /* -------------------- URL PARAM TAB -------------------- */
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
     if (tab === "add") setActiveTab("add");
   }, [location.search]);
-
-  /* -------------------- REDIRECT FIX -------------------- */
-  useEffect(() => {
-    // Redirect to correct origin based on environment
-    if (process.env.NODE_ENV === "development") {
-      if (window.location.origin !== "http://localhost:5173") {
-        navigate("/", { replace: true });
-      }
-    } else {
-      if (!window.location.origin.includes("your-deployed-domain")) {
-        navigate("/", { replace: true });
-      }
-    }
-  }, [navigate]);
 
   /* -------------------- ADD EXPENSE -------------------- */
   const handleAdd = async (e) => {
@@ -112,6 +84,7 @@ export default function Expenses() {
       date,
     };
 
+    // Instant UI update
     setExpenses((prev) => [optimisticExpense, ...prev]);
 
     try {
@@ -123,6 +96,7 @@ export default function Expenses() {
         date,
       });
 
+      // Replace the temp expense only if backend returned a valid object
       if (added && added._id) {
         setExpenses((prev) =>
           prev.map((e) => (e._id === tempId ? added : e))
@@ -130,9 +104,11 @@ export default function Expenses() {
       }
     } catch (error) {
       console.error("❌ Error adding expense:", error);
+      // Rollback UI on failure
       setExpenses((prev) => prev.filter((e) => e._id !== tempId));
     }
 
+    // Reset form
     setAmount("");
     setCategory("");
     setNote("");
@@ -305,7 +281,6 @@ export default function Expenses() {
           {activeTab === "add" && (
             <div className="bg-gray-100 rounded-xl border shadow p-4 flex-shrink-0">
               <form onSubmit={handleAdd} className="space-y-2">
-                {/* Type toggle */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -331,7 +306,6 @@ export default function Expenses() {
                   </button>
                 </div>
 
-                {/* Inputs */}
                 <div className="space-y-1">
                   <label htmlFor="amount" className="text-xs font-medium">
                     Amount
