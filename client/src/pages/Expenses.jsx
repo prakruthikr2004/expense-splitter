@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ExpensesContext } from "../context/ExpensesContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
 import { useSocket } from "../context/SocketContext";
-import { v4 as uuidv4 } from "uuid";
 
 import {
   TrendingUp,
@@ -36,10 +35,6 @@ export default function Expenses() {
   useEffect(() => {
     if (!socket) return;
 
-    // Join user-specific room (assumes user ID is available in context or local storage)
-    const userId = localStorage.getItem("userId");
-    if (userId) socket.emit("joinRoom", userId);
-
     const handleExpenseAdded = (expense) => {
       setExpenses((prev) => {
         if (prev.some((e) => e._id === expense._id)) return prev;
@@ -67,45 +62,19 @@ export default function Expenses() {
     if (tab === "add") setActiveTab("add");
   }, [location.search]);
 
-  // Add expense form with optimistic update
+  // Add expense form
   const handleAdd = (e) => {
     e.preventDefault();
     if (!amount || !category || !date) return;
 
-    // 1. Create temporary expense
-    const tempExpense = {
-      _id: uuidv4(), // temporary unique ID
-      type,
-      amount: Number(amount),
-      category,
-      note,
-      date,
-    };
-
-    // 2. Update UI immediately
-    setExpenses((prev) => [tempExpense, ...prev]);
-
-    // 3. Send to backend
     addExpense({
       type,
       amount: Number(amount),
       category,
       note,
       date,
-    })
-      .then((savedExpense) => {
-        // Replace temporary expense with saved expense
-        setExpenses((prev) =>
-          prev.map((e) => (e._id === tempExpense._id ? savedExpense : e))
-        );
-      })
-      .catch((err) => {
-        // Remove temporary expense if backend fails
-        setExpenses((prev) => prev.filter((e) => e._id !== tempExpense._id));
-        console.error("Failed to add expense:", err);
-      });
+    });
 
-    // 4. Reset form
     setAmount("");
     setCategory("");
     setNote("");
