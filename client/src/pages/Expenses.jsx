@@ -44,7 +44,8 @@ export default function Expenses() {
 
     const handleExpenseAdded = (expense) => {
       setExpenses((prev) => {
-        if (prev.some((e) => e._id === expense._id)) return prev;
+        // ✅ Avoid adding duplicates (same _id)
+        if (!expense?._id || prev.some((e) => e._id === expense._id)) return prev;
         return [expense, ...prev];
       });
     };
@@ -61,6 +62,19 @@ export default function Expenses() {
       socket.off("expenseDeleted", handleExpenseDeleted);
     };
   }, [socket, setExpenses]);
+
+  /* -------------------- DEDUPLICATE ON MOUNT -------------------- */
+  useEffect(() => {
+    // Remove duplicates if any are already in the state
+    setExpenses((prev) => {
+      const seen = new Set();
+      return prev.filter((e) => {
+        if (!e._id || seen.has(e._id)) return false;
+        seen.add(e._id);
+        return true;
+      });
+    });
+  }, []);
 
   /* -------------------- URL PARAM TAB -------------------- */
   useEffect(() => {
@@ -96,7 +110,7 @@ export default function Expenses() {
         date,
       });
 
-      // Replace the temp expense only if backend returned a valid object
+      // Replace temp with backend version
       if (added && added._id) {
         setExpenses((prev) =>
           prev.map((e) => (e._id === tempId ? added : e))
@@ -104,7 +118,7 @@ export default function Expenses() {
       }
     } catch (error) {
       console.error("❌ Error adding expense:", error);
-      // Rollback UI on failure
+      // rollback
       setExpenses((prev) => prev.filter((e) => e._id !== tempId));
     }
 
