@@ -166,19 +166,37 @@ export default function Expenses() {
       <div className="lg:col-span-2 flex flex-col h-full">
         {/* Tabs */}
         <div className="bg-gray-100 rounded-xl p-1 flex w-full mb-2">
-          <button onClick={() => setActiveTab("add")} className={`flex-1 px-4 py-2 text-sm font-medium rounded-xl transition ${activeTab === "add" ? "bg-black text-white" : "text-gray-500 hover:text-gray-800"}`}>Add Transaction</button>
-          <button onClick={() => setActiveTab("history")} className={`flex-1 px-4 py-2 text-sm font-medium rounded-xl transition ${activeTab === "history" ? "bg-black text-white" : "text-gray-500 hover:text-gray-800"}`}>Transaction History</button>
+          <button
+            onClick={() => setActiveTab("add")}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-xl transition ${activeTab === "add" ? "bg-black text-white" : "text-gray-500 hover:text-gray-800"}`}
+          >
+            Add Transaction
+          </button>
+          <button
+            onClick={() => setActiveTab("history")}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-xl transition ${activeTab === "history" ? "bg-black text-white" : "text-gray-500 hover:text-gray-800"}`}
+          >
+            Transaction History
+          </button>
         </div>
 
         {/* Add Form */}
         {activeTab === "add" && (
-          <div className="bg-gray-100 rounded-xl border shadow p-4 mb-2">
+          <div className="bg-gray-100 rounded-xl border shadow p-4 mb-2 flex-shrink-0">
             <form onSubmit={handleAdd} className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setType("Expense")} className={`flex items-center justify-center gap-2 h-8 px-3 py-1 rounded-md text-sm font-medium transition ${type === "Expense" ? "bg-black text-white hover:bg-gray-700" : "border bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
+                <button
+                  type="button"
+                  onClick={() => setType("Expense")}
+                  className={`flex items-center justify-center gap-2 h-8 px-3 py-1 rounded-md text-sm font-medium transition ${type === "Expense" ? "bg-black text-white hover:bg-gray-700" : "border bg-gray-50 text-gray-700 hover:bg-gray-100"}`}
+                >
                   <Minus className="w-4 h-4" /> Expense
                 </button>
-                <button type="button" onClick={() => setType("Income")} className={`flex items-center justify-center gap-2 h-8 px-3 py-1 rounded-md text-sm font-medium transition ${type === "Income" ? "bg-black text-white hover:bg-gray-700" : "border bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
+                <button
+                  type="button"
+                  onClick={() => setType("Income")}
+                  className={`flex items-center justify-center gap-2 h-8 px-3 py-1 rounded-md text-sm font-medium transition ${type === "Income" ? "bg-black text-white hover:bg-gray-700" : "border bg-gray-50 text-gray-700 hover:bg-gray-100"}`}
+                >
                   <Plus className="w-4 h-4" /> Income
                 </button>
               </div>
@@ -187,23 +205,54 @@ export default function Expenses() {
                 <label htmlFor="amount" className="text-xs font-medium">Amount</label>
                 <div className="relative">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
-                  <input id="amount" type="number" step="0.01" required value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="w-full pl-6 border rounded-md px-2 py-1.5 text-sm focus:border-black focus:ring-1 focus:ring-black transition" />
+                  <input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    required
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-6 border rounded-md px-2 py-1.5 text-sm focus:border-black focus:ring-1 focus:ring-black transition"
+                  />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label htmlFor="note" className="text-xs font-medium">Description</label>
-                <textarea id="note" rows="2" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What was this for?" className="w-full border rounded-md px-2 py-1.5 text-sm resize-none focus:border-black focus:ring-1 focus:ring-black transition" />
+                <textarea
+                  id="note"
+                  rows="2"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="What was this for?"
+                  className="w-full border rounded-md px-2 py-1.5 text-sm resize-none focus:border-black focus:ring-1 focus:ring-black transition"
+                />
               </div>
 
               <div className="space-y-1">
                 <label htmlFor="category" className="text-xs font-medium">Category</label>
-                <input id="category" type="text" required value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Food, Rent, Travel..." className="w-full border rounded-md px-2 py-1.5 text-sm focus:border-black focus:ring-1 focus:ring-black transition" />
+                <input
+                  id="category"
+                  type="text"
+                  required
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Food, Rent, Travel..."
+                  className="w-full border rounded-md px-2 py-1.5 text-sm focus:border-black focus:ring-1 focus:ring-black transition"
+                />
               </div>
 
               <div className="space-y-1">
                 <label htmlFor="date" className="text-xs font-medium">Date</label>
-                <input id="date" type="date" required value={date} onChange={(e) => setDate(e.target.value)} className="w-full border rounded-md px-2 py-1.5 text-sm focus:border-black focus:ring-1 focus:ring-black transition" />
+                <input
+                  id="date"
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full border rounded-md px-2 py-1.5 text-sm focus:border-black focus:ring-1 focus:ring-black transition"
+                />
               </div>
 
               <button type="submit" className="w-full bg-black text-white px-3 py-2 text-sm rounded-md hover:bg-gray-700">Add {type}</button>
@@ -212,58 +261,56 @@ export default function Expenses() {
         )}
 
         {/* History */}
-        {/* History */}
-{activeTab === "history" && (
-  <div className="bg-white rounded-xl border shadow p-4 flex flex-col flex-1">
-    <h4 className="text-base font-semibold mb-3">Recent Transactions</h4>
-    <div className="flex-1 overflow-y-auto height-80">
-      {expenses.length === 0 && (
-        <p className="text-gray-500 text-center text-sm">No transactions yet</p>
-      )}
-      {expenses.map((e) => (
-        <div
-          key={e._id}
-          className="flex items-center justify-between p-3 mb-2 bg-gray-100 rounded-lg hover:shadow"
-        >
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <span
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-white ${
-                  e.type === "Income" ? "bg-green-500" : "bg-red-500"
-                }`}
-              >
-                {e.type === "Income" ? <Plus className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
-                {e.type.toLowerCase()}
-              </span>
-              <span
-                className={`text-sm font-medium ${
-                  e.type === "Income" ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {e.type === "Income" ? "+" + formatRupee(e.amount) : "-" + formatRupee(e.amount)}
-              </span>
-            </div>
-            <p className="text-sm mb-0.5">{e.note || "No note"}</p>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Tag className="w-3 h-3" />
-              <span>{e.category}</span>
-              <span>•</span>
-              <Calendar className="w-3 h-3" />
-              <span>{new Date(e.date).toISOString().split("T")[0]}</span>
+        {activeTab === "history" && (
+          <div className="bg-white rounded-xl border shadow p-4 flex flex-col flex-1">
+            <h4 className="text-base font-semibold mb-3">Recent Transactions</h4>
+            <div className="flex-1 overflow-y-auto">
+              {expenses.length === 0 && (
+                <p className="text-gray-500 text-center text-sm">No transactions yet</p>
+              )}
+              {expenses.map((e) => (
+                <div
+                  key={e._id}
+                  className="flex items-center justify-between p-3 mb-2 bg-gray-100 rounded-lg hover:shadow"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-white ${
+                          e.type === "Income" ? "bg-green-500" : "bg-red-500"
+                        }`}
+                      >
+                        {e.type === "Income" ? <Plus className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                        {e.type.toLowerCase()}
+                      </span>
+                      <span
+                        className={`text-sm font-medium ${
+                          e.type === "Income" ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {e.type === "Income" ? "+" + formatRupee(e.amount) : "-" + formatRupee(e.amount)}
+                      </span>
+                    </div>
+                    <p className="text-sm mb-0.5">{e.note || "No note"}</p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Tag className="w-3 h-3" />
+                      <span>{e.category}</span>
+                      <span>•</span>
+                      <Calendar className="w-3 h-3" />
+                      <span>{new Date(e.date).toISOString().split("T")[0]}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => deleteExpense(e._id)}
+                    className="text-gray-400 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
-          <button
-            onClick={() => deleteExpense(e._id)}
-            className="text-gray-400 hover:text-red-600"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
+        )}
       </div>
     </div>
   );
