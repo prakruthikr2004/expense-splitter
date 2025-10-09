@@ -45,6 +45,7 @@ export default function Expenses() {
 
     const handleExpenseAdded = (expense) => {
       setExpenses((prev) => {
+        // Ignore if expense already exists
         if (prev.some((e) => e._id === expense._id)) return prev;
         return [expense, ...prev];
       });
@@ -97,25 +98,24 @@ export default function Expenses() {
         date,
       });
 
-      // Replace temp with backend item if available
+      // Replace tempId with actual server _id
       if (added && added._id) {
         setExpenses((prev) =>
           prev.map((e) => (e._id === tempId ? added : e))
         );
       }
 
-      // ✅ Switch to history only after transaction successfully added
+      // Switch to history tab after successful addition
       setActiveTab("history");
 
-      // Optional: scroll to top of transaction list after switching
+      // Scroll to top of transactions
       setTimeout(() => {
         const historyDiv = document.querySelector("#transactions-list");
         if (historyDiv) historyDiv.scrollTop = 0;
-      }, 200);
-
+      }, 100);
     } catch (error) {
       console.error("❌ Error adding expense:", error);
-      // Rollback on failure
+      // Rollback optimistic update
       setExpenses((prev) => prev.filter((e) => e._id !== tempId));
     }
 
@@ -435,17 +435,13 @@ export default function Expenses() {
                             : "-" + formatRupee(e.amount)}
                         </span>
                       </div>
-                      <p className="text-sm mb-0.5">
-                        {e.note || "No note"}
-                      </p>
+                      <p className="text-sm mb-0.5">{e.note || "No note"}</p>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <Tag className="w-3 h-3" />
                         <span>{e.category}</span>
                         <span>•</span>
                         <Calendar className="w-3 h-3" />
-                        <span>
-                          {new Date(e.date).toISOString().split("T")[0]}
-                        </span>
+                        <span>{new Date(e.date).toISOString().split("T")[0]}</span>
                       </div>
                     </div>
                     <button
