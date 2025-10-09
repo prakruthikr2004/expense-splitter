@@ -38,7 +38,7 @@ export default function Expenses() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  /* ----------------------------- SOCKET LISTENERS ----------------------------- */
+  /* -------------------- SOCKET LISTENERS -------------------- */
   useEffect(() => {
     if (!socket) return;
 
@@ -62,19 +62,18 @@ export default function Expenses() {
     };
   }, [socket, setExpenses]);
 
-  /* ----------------------------- URL PARAM TAB ----------------------------- */
+  /* -------------------- URL PARAM TAB -------------------- */
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
     if (tab === "add") setActiveTab("add");
   }, [location.search]);
 
-  /* ----------------------------- ADD EXPENSE ----------------------------- */
+  /* -------------------- ADD EXPENSE -------------------- */
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!amount || !category || !date) return;
 
-    // Create a temporary expense for instant UI update
     const tempId = `temp-${Date.now()}`;
     const optimisticExpense = {
       _id: tempId,
@@ -85,10 +84,9 @@ export default function Expenses() {
       date,
     };
 
-    // 🔥 Optimistic update: immediately update UI
+    // Instant UI update
     setExpenses((prev) => [optimisticExpense, ...prev]);
 
-    // Send to backend
     try {
       const added = await addExpense({
         type,
@@ -98,13 +96,15 @@ export default function Expenses() {
         date,
       });
 
-      // Replace temp expense with actual expense from backend
-      setExpenses((prev) =>
-        prev.map((e) => (e._id === tempId ? added : e))
-      );
+      // Replace the temp expense only if backend returned a valid object
+      if (added && added._id) {
+        setExpenses((prev) =>
+          prev.map((e) => (e._id === tempId ? added : e))
+        );
+      }
     } catch (error) {
-      console.error("Error adding expense:", error);
-      // Rollback if failed
+      console.error("❌ Error adding expense:", error);
+      // Rollback UI on failure
       setExpenses((prev) => prev.filter((e) => e._id !== tempId));
     }
 
@@ -116,13 +116,15 @@ export default function Expenses() {
     setActiveTab("history");
   };
 
-  /* ----------------------------- CALCULATIONS ----------------------------- */
-  const totalIncome = expenses
+  /* -------------------- CALCULATIONS -------------------- */
+  const totalIncome = (expenses || [])
     .filter((e) => e.type === "Income")
-    .reduce((acc, e) => acc + e.amount, 0);
-  const totalExpenses = expenses
+    .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+
+  const totalExpenses = (expenses || [])
     .filter((e) => e.type === "Expense")
-    .reduce((acc, e) => acc + e.amount, 0);
+    .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+
   const balance = totalIncome - totalExpenses;
 
   const formatRupee = (value) =>
@@ -138,7 +140,7 @@ export default function Expenses() {
     },
   ];
 
-  /* ----------------------------- UI ----------------------------- */
+  /* -------------------- UI -------------------- */
   return (
     <div className="w-full h-screen px-4 lg:px-6 py-2 grid grid-cols-1 lg:grid-cols-3 gap-3 overflow-hidden">
       {/* LEFT: Stats */}
@@ -178,18 +180,14 @@ export default function Expenses() {
                   {
                     label: "Total Income",
                     value: totalIncome,
-                    icon: (
-                      <TrendingUp className="w-6 h-6 text-green-600" />
-                    ),
+                    icon: <TrendingUp className="w-6 h-6 text-green-600" />,
                     color: "text-green-600",
                     isMoney: true,
                   },
                   {
                     label: "Total Expenses",
                     value: totalExpenses,
-                    icon: (
-                      <TrendingDown className="w-6 h-6 text-red-600" />
-                    ),
+                    icon: <TrendingDown className="w-6 h-6 text-red-600" />,
                     color: "text-red-600",
                     isMoney: true,
                   },
@@ -197,8 +195,7 @@ export default function Expenses() {
                     label: "Net Balance",
                     value: balance,
                     icon: <PiggyBank className="w-6 h-6 text-gray-500" />,
-                    color:
-                      balance >= 0 ? "text-green-600" : "text-red-600",
+                    color: balance >= 0 ? "text-green-600" : "text-red-600",
                     isMoney: true,
                   },
                   {
@@ -215,9 +212,7 @@ export default function Expenses() {
                   >
                     <div>
                       <p className="text-xs text-gray-500">{card.label}</p>
-                      <p
-                        className={`text-lg font-semibold ${card.color}`}
-                      >
+                      <p className={`text-lg font-semibold ${card.color}`}>
                         {card.isMoney
                           ? formatRupee(card.value)
                           : card.value}
@@ -282,6 +277,7 @@ export default function Expenses() {
         </div>
 
         <div className="flex-1 flex flex-col gap-2">
+          {/* ADD FORM */}
           {activeTab === "add" && (
             <div className="bg-gray-100 rounded-xl border shadow p-4 flex-shrink-0">
               <form onSubmit={handleAdd} className="space-y-2">
@@ -291,8 +287,8 @@ export default function Expenses() {
                     onClick={() => setType("Expense")}
                     className={`flex items-center justify-center gap-2 h-8 px-3 py-1 rounded-md text-sm font-medium transition ${
                       type === "Expense"
-                        ? "bg-black text-white hover:bg-gray-700"
-                        : "border bg-gray-50 text-gray-700 hover:bg-gray-100"
+                        ? "bg-black text-white"
+                        : "border bg-gray-50 text-gray-700"
                     }`}
                   >
                     <Minus className="w-4 h-4" /> Expense
@@ -302,8 +298,8 @@ export default function Expenses() {
                     onClick={() => setType("Income")}
                     className={`flex items-center justify-center gap-2 h-8 px-3 py-1 rounded-md text-sm font-medium transition ${
                       type === "Income"
-                        ? "bg-black text-white hover:bg-gray-700"
-                        : "border bg-gray-50 text-gray-700 hover:bg-gray-100"
+                        ? "bg-black text-white"
+                        : "border bg-gray-50 text-gray-700"
                     }`}
                   >
                     <Plus className="w-4 h-4" /> Income
@@ -384,6 +380,7 @@ export default function Expenses() {
             </div>
           )}
 
+          {/* HISTORY */}
           {activeTab === "history" && (
             <div className="bg-white rounded-xl border shadow p-4 flex-1 flex flex-col">
               <h4 className="text-base font-semibold mb-3">
