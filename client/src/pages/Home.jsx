@@ -278,22 +278,22 @@ useEffect(() => {
     <h4 className="text-lg font-medium">Groups</h4>
     <div className="flex space-x-2">
       <button
-        onClick={() => navigate("/dashboard/groups")}
-        className="bg-black text-gray-50 text-sm border rounded-md px-3 py-1 flex items-center gap-1 hover:bg-gray-100 hover:text-black"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path d="M5 12h14" />
-          <path d="M12 5v14" />
-        </svg>
-        Create group
-      </button>
+    onClick={() => navigate("/dashboard/groups")}
+    className="text-sm text-gray-500 hover:text-black flex items-center gap-1"
+  >
+    View groups
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
+  </button>
     </div>
   </div>
 

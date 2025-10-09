@@ -25,7 +25,8 @@ import {
 } from "lucide-react";
 
 export default function Expenses() {
-  const { expenses, setExpenses, addExpense, deleteExpense } = useContext(ExpensesContext);
+  const { expenses, setExpenses, addExpense, deleteExpense } =
+    useContext(ExpensesContext);
   const [type, setType] = useState("Expense");
   const [statsView, setStatsView] = useState("cards");
   const [amount, setAmount] = useState("");
@@ -84,7 +85,7 @@ export default function Expenses() {
       date,
     };
 
-    // Instant UI update
+    // Optimistic UI update
     setExpenses((prev) => [optimisticExpense, ...prev]);
 
     try {
@@ -96,24 +97,33 @@ export default function Expenses() {
         date,
       });
 
-      // Replace the temp expense only if backend returned a valid object
+      // Replace temp with backend item if available
       if (added && added._id) {
         setExpenses((prev) =>
           prev.map((e) => (e._id === tempId ? added : e))
         );
       }
+
+      // ✅ Switch to history only after transaction successfully added
+      setActiveTab("history");
+
+      // Optional: scroll to top of transaction list after switching
+      setTimeout(() => {
+        const historyDiv = document.querySelector("#transactions-list");
+        if (historyDiv) historyDiv.scrollTop = 0;
+      }, 200);
+
     } catch (error) {
       console.error("❌ Error adding expense:", error);
-      // Rollback UI on failure
+      // Rollback on failure
       setExpenses((prev) => prev.filter((e) => e._id !== tempId));
     }
 
-    // Reset form
+    // Reset form inputs
     setAmount("");
     setCategory("");
     setNote("");
     setDate("");
-    setActiveTab("history");
   };
 
   /* -------------------- CALCULATIONS -------------------- */
@@ -148,7 +158,9 @@ export default function Expenses() {
         <div className="flex-1 flex flex-col justify-between">
           <div>
             <h3 className="text-2xl font-semibold mb-1">Personal Tracker</h3>
-            <p className="text-gray-400 mb-2">Track your expenses and income</p>
+            <p className="text-gray-400 mb-2">
+              Track your expenses and income
+            </p>
 
             {/* Toggle */}
             <div className="flex justify-end gap-2 mb-2">
@@ -213,9 +225,7 @@ export default function Expenses() {
                     <div>
                       <p className="text-xs text-gray-500">{card.label}</p>
                       <p className={`text-lg font-semibold ${card.color}`}>
-                        {card.isMoney
-                          ? formatRupee(card.value)
-                          : card.value}
+                        {card.isMoney ? formatRupee(card.value) : card.value}
                       </p>
                     </div>
                     {card.icon}
@@ -386,7 +396,7 @@ export default function Expenses() {
               <h4 className="text-base font-semibold mb-3">
                 Recent Transactions
               </h4>
-              <div className="flex-1 overflow-y-auto">
+              <div id="transactions-list" className="flex-1 overflow-y-auto">
                 {expenses.length === 0 && (
                   <p className="text-gray-500 text-center text-sm">
                     No transactions yet
