@@ -45,8 +45,15 @@ export default function Expenses() {
 
     const handleExpenseAdded = (expense) => {
       setExpenses((prev) => {
-        // Ignore if expense already exists
-        if (prev.some((e) => e._id === expense._id)) return prev;
+        // Replace temp expense or add new
+        const idx = prev.findIndex(
+          (e) => e._id === expense._id || e._id.startsWith("temp-")
+        );
+        if (idx !== -1) {
+          const newArr = [...prev];
+          newArr[idx] = expense;
+          return newArr;
+        }
         return [expense, ...prev];
       });
     };
@@ -90,32 +97,17 @@ export default function Expenses() {
     setExpenses((prev) => [optimisticExpense, ...prev]);
 
     try {
-      const added = await addExpense({
+      await addExpense({
         type,
         amount: Number(amount),
         category,
         note,
         date,
       });
-
-      // Replace tempId with actual server _id
-      if (added && added._id) {
-        setExpenses((prev) =>
-          prev.map((e) => (e._id === tempId ? added : e))
-        );
-      }
-
-      // Switch to history tab after successful addition
-      setActiveTab("history");
-
-      // Scroll to top of transactions
-      setTimeout(() => {
-        const historyDiv = document.querySelector("#transactions-list");
-        if (historyDiv) historyDiv.scrollTop = 0;
-      }, 100);
+      // The WebSocket will replace the temp expense with the real one
     } catch (error) {
       console.error("❌ Error adding expense:", error);
-      // Rollback optimistic update
+      // Remove temp expense
       setExpenses((prev) => prev.filter((e) => e._id !== tempId));
     }
 
@@ -124,6 +116,15 @@ export default function Expenses() {
     setCategory("");
     setNote("");
     setDate("");
+
+    // Switch to history
+    setActiveTab("history");
+
+    // Scroll to top of transactions
+    setTimeout(() => {
+      const historyDiv = document.querySelector("#transactions-list");
+      if (historyDiv) historyDiv.scrollTop = 0;
+    }, 100);
   };
 
   /* -------------------- CALCULATIONS -------------------- */
