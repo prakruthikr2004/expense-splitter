@@ -377,7 +377,7 @@ export default function Expenses() {
 
           {/* History */}
           {activeTab === "history" && (
-            <div className="bg-white rounded-xl border shadow p-4 flex-1 flex  max-h-90 flex-col">
+            <div className="bg-white rounded-xl border shadow p-4 max-h-[500px] flex flex-col">
               <h4 className="text-base font-semibold mb-3">Recent Transactions</h4>
               {/* Reduced height with scroll */}
               <div className="overflow-y-auto max-h-80">
