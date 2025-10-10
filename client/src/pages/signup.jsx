@@ -108,24 +108,12 @@ export default function Signup() {
               {/* Google Login */}
               <div className="text-center mt-2">
                 <button
-  onClick={() => {
-    const backendURL =
-      import.meta.env.NODE_ENV === "production"
-        ? import.meta.env.VITE_API_URL
-        : import.meta.env.VITE_LOCAL_BACKEND;
-
-    window.location.href = `${backendURL}/auth/google`;
-  }}
-  className="w-full h-12 border border-gray-300 rounded-md flex items-center justify-center gap-2 hover:bg-gray-100 transition"
->
-  <img
-    src="https://developers.google.com/identity/images/g-logo.png"
-    alt="Google"
-    className="w-5 h-5"
-  />
-  Continue with Google
-</button>
-
+        onClick={() => (window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`)}
+        className="w-full h-12 border border-gray-300 rounded-md flex items-center justify-center gap-2 hover:bg-gray-100 transition"
+      >
+        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5" />
+        Continue with Google
+      </button>
               </div>
 
               {/* Login Link */}
