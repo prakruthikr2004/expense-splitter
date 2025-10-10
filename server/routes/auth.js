@@ -77,10 +77,17 @@ router.get(
       { expiresIn: "7d" }
     );
 
-    // redirect back to frontend with token
-    res.redirect(`${process.env.CLIENT_ORIGIN}/oauth-success?token=${token}`);
+    // Choose correct frontend URL
+    const FRONTEND_URL =
+      process.env.NODE_ENV === "production"
+        ? process.env.CLIENT_ORIGIN
+        : "http://localhost:5173";
+
+    // Redirect back to frontend with token
+    res.redirect(`${FRONTEND_URL}/oauth-success?token=${token}`);
   }
 );
+
 
 
 // ✨ Update Name
