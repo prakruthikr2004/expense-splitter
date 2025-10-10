@@ -30,12 +30,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,   // put in .env
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-
-      // 🔹 Fixed: dynamic callback URL based on environment
-      callbackURL:
-        process.env.NODE_ENV === "production"
-          ? `${process.env.CLIENT_ORIGIN}/auth/google/callback` // deployed backend
-          : "http://localhost:5000/auth/google/callback",      // local backend
+      callbackURL: `${process.env.VITE_API_URL}/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -46,12 +41,14 @@ passport.use(
         let user = await User.findOne({ email });
 
         if (!user) {
+          // create new user (no password)
           user = new User({
-            name,
-            email,
-            avatar,
-            isOAuth: true,
-          });
+  name,
+  email,
+  avatar,
+  isOAuth: true, // optional flag to track OAuth users
+});
+
           await user.save();
         }
 
@@ -80,17 +77,10 @@ router.get(
       { expiresIn: "7d" }
     );
 
-    // 🔹 Redirect to correct frontend based on environment
-    const FRONTEND_URL =
-      process.env.NODE_ENV === "production"
-        ? process.env.CLIENT_ORIGIN // deployed frontend
-        : "http://localhost:5173";  // local frontend
-
-    res.redirect(`${FRONTEND_URL}/oauth-success?token=${token}`);
+    // redirect back to frontend with token
+    res.redirect(`${process.env.CLIENT_ORIGIN}/oauth-success?token=${token}`);
   }
 );
-
-
 
 
 // ✨ Update Name
