@@ -36,7 +36,6 @@ export default function Expenses() {
   useEffect(() => {
     if (!socket) return;
 
-    // Join user-specific room (assumes user ID is available in context or local storage)
     const userId = localStorage.getItem("userId");
     if (userId) socket.emit("joinRoom", userId);
 
@@ -47,8 +46,8 @@ export default function Expenses() {
       });
     };
 
-    const handleExpenseDeleted = ({ id }) => {
-      setExpenses((prev) => prev.filter((e) => e._id !== id));
+    const handleExpenseDeleted = (expense) => {
+      setExpenses((prev) => prev.filter((e) => e._id !== expense._id));
     };
 
     socket.on("expenseAdded", handleExpenseAdded);
@@ -72,9 +71,9 @@ export default function Expenses() {
     e.preventDefault();
     if (!amount || !category || !date) return;
 
-    // 1. Create temporary expense
+    // Temporary expense for UI
     const tempExpense = {
-      _id: uuidv4(), // temporary unique ID
+      _id: uuidv4(),
       type,
       amount: Number(amount),
       category,
@@ -82,10 +81,9 @@ export default function Expenses() {
       date,
     };
 
-    // 2. Update UI immediately
+    // Optimistic update
     setExpenses((prev) => [tempExpense, ...prev]);
 
-    // 3. Send to backend
     addExpense({
       type,
       amount: Number(amount),
@@ -94,28 +92,28 @@ export default function Expenses() {
       date,
     })
       .then((savedExpense) => {
-        // Replace temporary expense with saved expense
         setExpenses((prev) =>
           prev.map((e) => (e._id === tempExpense._id ? savedExpense : e))
         );
+
+        // ✅ Switch to Transaction History after successful add
+        setActiveTab("history");
       })
       .catch((err) => {
-        // Remove temporary expense if backend fails
         setExpenses((prev) => prev.filter((e) => e._id !== tempExpense._id));
         console.error("Failed to add expense:", err);
       });
 
-    // 4. Reset form
+    // Reset form fields
     setAmount("");
     setCategory("");
     setNote("");
     setDate("");
-    setActiveTab("history");
   };
 
   // Calculations
-  const totalIncome = expenses.filter((e) => e.type === "Income").reduce((acc, e) => acc + e.amount, 0);
-  const totalExpenses = expenses.filter((e) => e.type === "Expense").reduce((acc, e) => acc + e.amount, 0);
+  const totalIncome = expenses.filter((e) => e.type === "Income").reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+  const totalExpenses = expenses.filter((e) => e.type === "Expense").reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
   const balance = totalIncome - totalExpenses;
 
   const formatRupee = (value) =>
@@ -123,9 +121,9 @@ export default function Expenses() {
 
   // Chart data
   const chartData = [
-    { name: "Income", value: totalIncome || 0.01, fill: "green" },
-    { name: "Expenses", value: totalExpenses || 0.01, fill: "red" },
-    { name: "Net Balance", value: balance || 0.01, fill: balance >= 0 ? "#16a34a" : "#dc2626" },
+    { name: "Income", value: isNaN(totalIncome) ? 0 : totalIncome, fill: "green" },
+    { name: "Expenses", value: isNaN(totalExpenses) ? 0 : totalExpenses, fill: "red" },
+    { name: "Net Balance", value: isNaN(balance) ? 0 : balance, fill: balance >= 0 ? "#16a34a" : "#dc2626" },
   ];
 
   return (
