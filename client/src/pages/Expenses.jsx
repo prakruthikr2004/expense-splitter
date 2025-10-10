@@ -376,69 +376,65 @@ export default function Expenses() {
           )}
 
           {/* History */}
-          {/* History */}
-{activeTab === "history" && (
-  <div className="bg-white rounded-xl border shadow p-4 flex-1 flex flex-col">
-    <h4 className="text-base font-semibold mb-3">Recent Transactions</h4>
-    <div className="overflow-y-auto max-h-[500px]">
-      {expenses.length === 0 ? (
-        <p className="text-gray-500 text-center text-sm">No transactions yet</p>
-      ) : (
-        expenses.map((e) => (
-          <div
-            key={e._id}
-            className="flex items-center justify-between p-3 mb-2 bg-gray-100 rounded-lg hover:shadow"
-          >
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-1">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-white ${
-                    e.type === "Income" ? "bg-green-500" : "bg-red-500"
-                  }`}
-                >
-                  {e.type === "Income" ? <Plus className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
-                  {e.type.toLowerCase()}
-                </span>
-                <span
-                  className={`text-sm font-medium ${
-                    e.type === "Income" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {e.type === "Income" ? "+" + formatRupee(e.amount) : "-" + formatRupee(e.amount)}
-                </span>
-              </div>
-              <p className="text-sm mb-0.5">{e.note || "No note"}</p>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <Tag className="w-3 h-3" />
-                <span>{e.category}</span>
-                <span>•</span>
-                <Calendar className="w-3 h-3" />
-                <span>{new Date(e.date).toISOString().split("T")[0]}</span>
+          {activeTab === "history" && (
+            <div className="bg-white rounded-xl border shadow p-4 flex-1 flex h-90 flex-col">
+              <h4 className="text-base font-semibold mb-3">Recent Transactions</h4>
+              {/* Reduced height with scroll */}
+              <div className="overflow-y-auto max-h-80">
+                {expenses.length === 0 && (
+                  <p className="text-gray-500 text-center text-sm">
+                    No transactions yet
+                  </p>
+                )}
+                {expenses.map((e) => (
+                  <div
+                    key={e._id}
+                    className="flex items-center justify-between p-3 mb-2 bg-gray-100 rounded-lg hover:shadow"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-white ${
+                            e.type === "Income" ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        >
+                          {e.type === "Income" ? (
+                            <Plus className="w-3 h-3" />
+                          ) : (
+                            <Minus className="w-3 h-3" />
+                          )}
+                          {e.type.toLowerCase()}
+                        </span>
+                        <span
+                          className={`text-sm font-medium ${
+                            e.type === "Income" ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {e.type === "Income"
+                            ? "+" + formatRupee(e.amount)
+                            : "-" + formatRupee(e.amount)}
+                        </span>
+                      </div>
+                      <p className="text-sm mb-0.5">{e.note || "No note"}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Tag className="w-3 h-3" />
+                        <span>{e.category}</span>
+                        <span>•</span>
+                        <Calendar className="w-3 h-3" />
+                        <span>{new Date(e.date).toISOString().split("T")[0]}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteExpense(e._id)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
-            <button
-              onClick={async () => {
-                // Optimistically remove from UI
-                setExpenses((prev) => prev.filter((ex) => ex._id !== e._id));
-                try {
-                  await deleteExpense(e._id);
-                } catch (err) {
-                  // If deletion fails, restore
-                  setExpenses((prev) => [e, ...prev]);
-                  console.error("Delete failed:", err);
-                }
-              }}
-              className="text-gray-400 hover:text-red-600"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        ))
-      )}
-    </div>
-  </div>
-)}
-
+          )}
         </div>
       </div>
     </div>
