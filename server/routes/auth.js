@@ -34,7 +34,7 @@ passport.use(
       // 🔹 Fixed: dynamic callback URL based on environment
       callbackURL:
         process.env.NODE_ENV === "production"
-          ? `${process.env.CLIENT_ORIGIN}/auth/google/callback` // deployed backend
+          ? `${process.env.VITE_API_URL}/auth/google/callback` // deployed backend
           : "http://localhost:5000/auth/google/callback",      // local backend
     },
     async (accessToken, refreshToken, profile, done) => {
