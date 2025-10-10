@@ -182,7 +182,7 @@ const LoginForm = ({ email, setEmail, password, setPassword, handleLogin, naviga
     const backendURL =
       import.meta.env.NODE_ENV === "production"
         ? import.meta.env.VITE_API_URL
-        : import.meta.env.LOCAL_BACKEND;
+        : import.meta.env.VITE_LOCAL_BACKEND;
 
     window.location.href = `${backendURL}/auth/google`;
   }}
